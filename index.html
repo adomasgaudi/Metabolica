@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.1.4 — weight tracker</title>
+<title>Metabolica v0.1.5 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -95,19 +95,14 @@
   .stat-card .unit {
     font-size: 11px; color: #888; font-weight: 500; margin-left: 2px;
   }
-  /* Chart view fills the screen: flex column so the chart grows to take all
-     space left after the heading, stat cards, and settings panel — no page
-     scroll on a phone (100dvh tracks the visible viewport as browser chrome
-     hides/shows). */
-  #view-chart.active {
-    display: flex; flex-direction: column;
-    min-height: calc(100vh - 166px);   /* fallback: browsers without dvh */
-    min-height: calc(100dvh - 166px);  /* dvh tracks the visible area on mobile (no address-bar jump) */
-    padding-bottom: 0;
-  }
+  /* Chart view fills the screen. CSS flex-grow proved unreliable across mobile
+     browsers, so the chart-container's height is measured and set in JS
+     (sizeChart) to exactly fill from its top down to the bottom nav. These
+     rules are just the fallback before JS runs / if it's disabled. */
+  #view-chart.active { padding-bottom: 0; }
   #view-chart .stat-cards { margin-bottom: 12px; }
   .chart-container {
-    position: relative; flex: 1 1 auto; min-height: 300px;
+    position: relative; height: 60vh; min-height: 300px;
     margin-bottom: 8px; overflow: hidden;
   }
   .chart-scroll { position: relative; width: 100%; height: 100%; }
@@ -513,7 +508,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.4</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.5</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
     <button id="admin-btn" class="icon-btn admin-only" aria-label="Admin — manage users">
@@ -1262,6 +1257,20 @@ const UI = (() => {
     if (name === 'users') renderUsers();
   }
 
+  // Set the chart container's height in pixels so it fills from its own top
+  // edge down to just above the bottom nav. Reliable where CSS flex-grow /
+  // dvh aren't — uses the live measured viewport (innerHeight) and positions.
+  function sizeChart() {
+    const container = $('.chart-container');
+    if (!container || container.style.display === 'none') return;
+    const nav = $('.bottom-nav');
+    const navH = nav ? nav.offsetHeight : 80;
+    const top = container.getBoundingClientRect().top;
+    const h = window.innerHeight - top - navH - 12;
+    container.style.height = Math.max(h, 260) + 'px';
+    if (chart) chart.resize();
+  }
+
   function renderChart() {
     const log = Store.getLog();
     const sorted = [...log].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -1281,6 +1290,7 @@ const UI = (() => {
     container.style.display = 'block';
     cards.style.display = 'grid';
     settings.style.display = 'block';
+    sizeChart();  // give the container a real height before Chart.js reads it
 
     const current = sorted[sorted.length - 1].weight;
     const first = sorted[0].weight;
@@ -1724,6 +1734,10 @@ const UI = (() => {
     });
     // Reset zoom/pan back to the full data range
     $('#reset-zoom').addEventListener('click', () => { if (chart) chart.resetZoom(); });
+
+    // Keep the chart filling the screen on rotate / address-bar show-hide
+    window.addEventListener('resize', sizeChart);
+    window.addEventListener('orientationchange', () => setTimeout(sizeChart, 200));
 
     // Add button
     $('#add-btn').addEventListener('click', () => {
