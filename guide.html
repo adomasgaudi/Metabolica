@@ -213,6 +213,29 @@
   }
   .checklist-item input:checked ~ .item-body .item-note { color: #aaa; }
 
+  /* CATEGORY ACCORDION — the guide's main topics, collapsed by default. */
+  .cat-list { margin-bottom: 24px; }
+  .cat {
+    border: 1px solid #eee; border-radius: 10px; background: #fff;
+    margin-bottom: 8px; overflow: hidden;
+  }
+  .cat-head {
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px; background: none; border: none; cursor: pointer; text-align: left;
+  }
+  .cat-head .cat-title { font-size: 14.5px; font-weight: 700; color: #111; }
+  .cat-head .cat-chev { margin-left: auto; color: #bbb; font-size: 11px; transition: transform 0.2s; }
+  .cat.open .cat-head .cat-chev { transform: rotate(180deg); }
+  .cat-soon {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    color: #92400e; background: #fef3c7; border-radius: 6px; padding: 2px 7px;
+  }
+  .cat-body { display: none; padding: 0 16px 16px; }
+  .cat.open .cat-body { display: block; }
+  .cat-desc { font-size: 13px; color: #555; line-height: 1.6; }
+  .cat-stub { margin-top: 8px; font-size: 12.5px; color: #9ca3af; font-style: italic; }
+  .cat-ref { margin-top: 8px; font-size: 12.5px; color: #0f766e; }
+
   .disclaimer {
     margin-top: 22px; padding: 14px 16px;
     background: #fef9c3; border: 1px solid #fde68a; border-radius: 10px;
@@ -263,7 +286,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.3</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.4</span></div>
   <div class="topbar-right">
     <span id="tier-badge" class="tier-badge tier-badge-beta">BETA</span>
     <button id="beta-btn" class="beta-btn restricted-only" type="button">Alpha</button>
@@ -415,6 +438,122 @@
             <span class="item-title">Talk to a doctor</span>
             <span class="item-note">Especially if you take medication, are pregnant, are under 18, or have any history of kidney, liver, heart, or eating-disorder issues. PSMF is a real medical intervention.</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="font-size:14.5px;font-weight:700;color:#111;margin:6px 0 12px;">Topics</h3>
+    <div class="cat-list" id="cat-list">
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Body tracking</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Daily weigh-ins, clothes and toilet offsets, and reading the trend instead of the daily noise.</p>
+          <p class="cat-ref">Prep items live in the checklist above (scale, calibration).</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Food tracking</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Logging meals, weighing portions in grams, and scanning labels to estimate protein and calories.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Micronutrients / protein</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Covering key vitamins and minerals while eating at a deficit, alongside protein targets.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">The protocol</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">What a protein-sparing modified fast is, the daily structure, how long to run it, and refeeds.</p>
+          <p class="cat-ref">Preparation checklist is above; see the Methodology tab for the reasoning.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Culinary help</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Recipes, prep routines, and seasoning lean protein so low-calorie eating stays palatable.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Financial help</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Running this on a budget — cheap protein sources and shopping strategy.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Keto</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">The ketogenic approach — ketosis, fat adaptation, and how it differs from PSMF.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Fasting</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Intermittent and extended fasting, electrolytes while fasted, and how to break a fast.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Low-carb diet</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Carb thresholds, common food swaps, and what to expect in the first low-carb week.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Fluids</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Water targets and the sodium / potassium / magnesium balance that low-carb flushes out.</p>
+          <p class="cat-ref">Electrolyte supplies are in the checklist above.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Fiber</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Sources, targets, and keeping regular on a low-carb deficit.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Volume food</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">High-volume, low-calorie foods that fill you up for very few calories.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Protein</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Daily targets (g/kg), best sources, timing, and leucine for muscle retention.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Satiety index</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Which foods keep you fullest per calorie, and how to build meals around them.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">GI index</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Glycemic index and load, and how they affect blood sugar and hunger.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Other</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-desc">Anything that doesn't fit the categories above.</p>
+          <p class="cat-stub">Detailed notes coming soon.</p>
         </div>
       </div>
     </div>
@@ -610,12 +749,20 @@ const UI = (() => {
     });
   }
 
+  // Category accordion — click a header to expand/collapse its topic.
+  function initCategories() {
+    $$('.cat-head').forEach(head => {
+      head.addEventListener('click', () => head.closest('.cat').classList.toggle('open'));
+    });
+  }
+
   function init() {
     applyTier();
     wireBetaGate();
     renderAuthState();
     initChecklist();
     initExpandable();
+    initCategories();
 
     // Tapping the auth label routes back to the tracker, where
     // the sign-in modal lives.
