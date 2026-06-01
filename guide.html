@@ -214,11 +214,6 @@
   .checklist-item input:checked ~ .item-body .item-note { color: #aaa; }
 
   /* CATEGORY ACCORDION — the guide's main topics, collapsed by default. */
-  .topics-head {
-    font-size: 14.5px; font-weight: 700; color: #111; margin: 6px 0 6px;
-    display: flex; align-items: baseline; justify-content: space-between;
-  }
-  .topics-intro { font-size: 12.5px; color: #666; line-height: 1.55; margin-bottom: 14px; }
   .cat-list { margin-bottom: 24px; }
   .cat {
     border: 1px solid #eee; border-radius: 10px; background: #fff;
@@ -300,7 +295,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.6</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.7</span></div>
   <div class="topbar-right">
     <span id="tier-badge" class="tier-badge tier-badge-beta">BETA</span>
     <button id="beta-btn" class="beta-btn restricted-only" type="button">Alpha</button>
@@ -321,16 +316,11 @@
 
 <main class="content">
   <section class="view">
-    <h2>PSMF guide</h2>
-
-    <h3 class="topics-head">Topics <span class="checklist-count" id="checklist-count">0 / 0</span></h3>
-    <p class="topics-intro">Your preparation checklist now lives inside the matching topics — tap a topic to expand it and tick items off.</p>
     <div class="cat-list" id="cat-list">
 
       <div class="cat">
         <button class="cat-head" type="button"><span class="cat-title">Body tracking</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
-          <p class="cat-desc">Daily weigh-ins, clothes and toilet offsets, and reading the trend instead of the daily noise.</p>
           <div class="checklist-item">
             <input type="checkbox" data-key="scale-body">
             <div class="item-body">
@@ -372,7 +362,6 @@
       <div class="cat">
         <button class="cat-head" type="button"><span class="cat-title">Food tracking</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
-          <p class="cat-desc">Logging meals, weighing portions in grams, and scanning labels to estimate protein and calories.</p>
           <div class="checklist-item">
             <input type="checkbox" data-key="scale-kitchen">
             <div class="item-body">
@@ -391,17 +380,8 @@
       </div>
 
       <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Micronutrients / protein</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">Covering key vitamins and minerals while eating at a deficit, alongside protein targets.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
         <button class="cat-head" type="button"><span class="cat-title">The protocol</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
-          <p class="cat-desc">What a protein-sparing modified fast is, the daily structure, how long to run it, and refeeds. See the Methodology tab for the reasoning.</p>
           <div class="checklist-item">
             <input type="checkbox" data-key="doctor">
             <div class="item-body">
@@ -413,49 +393,8 @@
       </div>
 
       <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Culinary help</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">Recipes, prep routines, and seasoning lean protein so low-calorie eating stays palatable.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Financial help</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">Running this on a budget — cheap protein sources and shopping strategy.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Keto</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">The ketogenic approach — ketosis, fat adaptation, and how it differs from PSMF.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Fasting</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">Intermittent and extended fasting, electrolytes while fasted, and how to break a fast.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Low-carb diet</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">Carb thresholds, common food swaps, and what to expect in the first low-carb week.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
         <button class="cat-head" type="button"><span class="cat-title">Fluids</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
-          <p class="cat-desc">Water targets and the sodium / potassium / magnesium balance that low-carb flushes out.</p>
           <div class="checklist-item">
             <input type="checkbox" data-key="measuring-tools">
             <div class="item-body">
@@ -490,7 +429,6 @@
       <div class="cat">
         <button class="cat-head" type="button"><span class="cat-title">Fiber</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
-          <p class="cat-desc">Sources, targets, and keeping regular on a low-carb deficit.</p>
           <div class="checklist-item">
             <input type="checkbox" data-key="chia">
             <div class="item-body">
@@ -502,17 +440,8 @@
       </div>
 
       <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Volume food</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">High-volume, low-calorie foods that fill you up for very few calories.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
         <button class="cat-head" type="button"><span class="cat-title">Protein</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
-          <p class="cat-desc">Daily targets (g/kg), best sources, timing, and leucine for muscle retention.</p>
           <div class="checklist-item">
             <input type="checkbox" data-key="protein-week1">
             <div class="item-body">
@@ -524,25 +453,8 @@
       </div>
 
       <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Satiety index</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">Which foods keep you fullest per calorie, and how to build meals around them.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">GI index</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
-        <div class="cat-body">
-          <p class="cat-desc">Glycemic index and load, and how they affect blood sugar and hunger.</p>
-          <p class="cat-stub">Detailed notes coming soon.</p>
-        </div>
-      </div>
-
-      <div class="cat">
         <button class="cat-head" type="button"><span class="cat-title">Sweet tooth</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
-          <p class="cat-desc">Taming cravings — sweeteners, low-calorie sweet options, and what to keep on hand.</p>
           <div class="checklist-item">
             <input type="checkbox" data-key="sweetener">
             <div class="item-body">
@@ -554,18 +466,80 @@
       </div>
 
       <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Micronutrients / protein</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Culinary help</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Financial help</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Keto</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Fasting</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Low-carb diet</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Volume food</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">Satiety index</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
+        <button class="cat-head" type="button"><span class="cat-title">GI index</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <div class="cat-body">
+          <p class="cat-stub">Detailed notes coming soon.</p>
+        </div>
+      </div>
+
+      <div class="cat">
         <button class="cat-head" type="button"><span class="cat-title">Other</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
-          <p class="cat-desc">Anything that doesn't fit the categories above.</p>
           <p class="cat-stub">Detailed notes coming soon.</p>
         </div>
       </div>
     </div>
 
     <details class="disclaimer-drop">
-      <summary>⚠ Important — read before starting</summary>
+      <summary>⚠ Read before starting</summary>
       <div class="disclaimer">
-        <strong>Important.</strong> A protein-sparing modified fast is a real medical intervention. Talk to a doctor before starting, especially if you take medication, are pregnant, are under 18, or have any kidney, liver, heart, or eating-disorder history. This app is a tracker and a working guide, not medical advice.
+        A protein-sparing modified fast is a real medical intervention. Talk to a doctor before starting, especially if you take medication, are pregnant, are under 18, or have any kidney, liver, heart, or eating-disorder history. This app is a tracker and a working guide, not medical advice.
       </div>
     </details>
   </section>
@@ -722,9 +696,11 @@ const UI = (() => {
   }
 
   function renderChecklistCount() {
+    const el = $('#checklist-count');
+    if (!el) return;
     const total = $$('.checklist-item input[type="checkbox"]').length;
     const checked = $$('.checklist-item input[type="checkbox"]:checked').length;
-    $('#checklist-count').textContent = `${checked} / ${total}`;
+    el.textContent = `${checked} / ${total}`;
   }
 
   function initChecklist() {
