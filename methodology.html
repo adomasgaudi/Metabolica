@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Trim — methodology</title>
+<title>Metabolica v0.1 — methodology</title>
 <meta name="description" content="Why lean toward a bigger calorie deficit, with a TDEE-uncertainty calculator.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -32,14 +32,17 @@
     position: sticky; top: 0; z-index: 50;
   }
   .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
-  .brand .accent { color: #059669; }
+  .brand .version {
+    font-size: 11px; font-weight: 600; color: #aaa; letter-spacing: 0; margin-left: 3px;
+  }
+  .brand .accent { color: #0d9488; }
   .topbar-right { display: flex; align-items: center; gap: 4px; }
   .auth-state {
     font-size: 12px; color: #666; padding: 6px 10px;
     border-radius: 6px; cursor: pointer; transition: background 0.15s;
   }
   .auth-state:hover { background: #f4f4f4; }
-  .auth-state.signed-in { color: #059669; }
+  .auth-state.signed-in { color: #0d9488; }
 
   /* SUB-TABS (Guide / Methodology) */
   .sub-tabs {
@@ -55,7 +58,7 @@
   }
   .sub-tab:hover { color: #555; }
   .sub-tab.active {
-    color: #059669; border-bottom-color: #059669; font-weight: 600;
+    color: #0d9488; border-bottom-color: #0d9488; font-weight: 600;
   }
 
   /* CONTENT */
@@ -67,9 +70,9 @@
   }
 
   .method-intro {
-    padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0;
+    padding: 16px; background: #f0fdfa; border: 1px solid #99f6e4;
     border-radius: 10px; margin-bottom: 22px;
-    font-size: 13.5px; color: #14532d; line-height: 1.65;
+    font-size: 13.5px; color: #115e59; line-height: 1.65;
   }
 
   .prose {
@@ -87,7 +90,7 @@
   .prose ul { margin: 10px 0 12px 22px; }
   .prose li { margin-bottom: 6px; }
   .prose strong { color: #111; }
-  .prose em { color: #059669; font-style: normal; font-weight: 600; }
+  .prose em { color: #0d9488; font-style: normal; font-weight: 600; }
 
   /* REFERENCE PROFILES */
   .profiles {
@@ -99,7 +102,7 @@
     border-radius: 10px; padding: 14px;
   }
   .profile-card h4 {
-    font-size: 12px; font-weight: 700; color: #15803d;
+    font-size: 12px; font-weight: 700; color: #0f766e;
     text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
   }
   .profile-card .row {
@@ -134,27 +137,27 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .form-row input:focus {
-    outline: none; border-color: #059669;
-    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+    outline: none; border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
   }
   .calc-result {
-    padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0;
+    padding: 16px; background: #f0fdfa; border: 1px solid #99f6e4;
     border-radius: 8px;
   }
   .calc-result h4 {
-    font-size: 11.5px; font-weight: 700; color: #15803d;
+    font-size: 11.5px; font-weight: 700; color: #0f766e;
     text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;
   }
   .calc-row {
     display: flex; justify-content: space-between; align-items: baseline;
-    font-size: 14px; padding: 8px 0; border-bottom: 1px solid #d1fae5;
+    font-size: 14px; padding: 8px 0; border-bottom: 1px solid #ccfbf1;
   }
   .calc-row:last-child { border-bottom: none; }
   .calc-row .lbl { color: #555; }
   .calc-row .val { font-weight: 700; color: #111; font-size: 16px; }
   .calc-row .val.warn { color: #dc2626; }
   .calc-note {
-    margin-top: 12px; padding-top: 10px; border-top: 1px solid #d1fae5;
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid #ccfbf1;
     font-size: 12px; color: #555; line-height: 1.55;
   }
 
@@ -181,21 +184,21 @@
     transition: color 0.15s; text-decoration: none;
   }
   .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.7; }
-  .nav-btn.active { color: #059669; }
+  .nav-btn.active { color: #0d9488; }
   .nav-btn:hover { color: #555; }
-  .nav-btn.active:hover { color: #059669; }
+  .nav-btn.active:hover { color: #0d9488; }
   .add-btn-wrap { display: flex; justify-content: center; }
   .add-btn {
-    background: #059669; color: #fff; border: none;
+    background: #0d9488; color: #fff; border: none;
     width: 60px; height: 60px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    margin-top: -30px; box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+    margin-top: -30px; box-shadow: 0 6px 18px rgba(13, 148, 136, 0.35);
     transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
     text-decoration: none;
   }
   .add-btn:hover {
-    background: #047857; transform: scale(1.05);
-    box-shadow: 0 8px 22px rgba(5, 150, 105, 0.45);
+    background: #0f766e; transform: scale(1.05);
+    box-shadow: 0 8px 22px rgba(13, 148, 136, 0.45);
   }
   .add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.6; }
 </style>
@@ -203,7 +206,7 @@
 <body>
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Trim</div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
   </div>
@@ -264,7 +267,7 @@
 
       <h3>7. Electrolytes are usually the actual problem</h3>
       <p>The most common reason someone says "I can't fast any longer" is electrolyte depletion, not hunger. Low sodium and low magnesium feel terrible — headache, weakness, dizziness, fog — and people interpret those signals as "the fast is killing me", when in fact it is the missing salt.</p>
-      <p>The program treats electrolyte management as non-negotiable. See the <a style="color: #059669; border-bottom: 1px solid #bbf7d0;" href="guide.html">guide checklist</a> for specific targets and supplies. Get this right and most "I have to stop" moments simply disappear.</p>
+      <p>The program treats electrolyte management as non-negotiable. See the <a style="color: #0d9488; border-bottom: 1px solid #99f6e4;" href="guide.html">guide checklist</a> for specific targets and supplies. Get this right and most "I have to stop" moments simply disappear.</p>
 
       <h3>8. The stepped refeed</h3>
       <p>After a fast you cannot just eat normally — refeeding too fast on carbs triggers refeeding syndrome and undoes weeks of work. The protocol after the fast:</p>
@@ -294,7 +297,7 @@
       <h3>10. Know what the scale is actually showing you</h3>
       <p>The autoregulative move only works if you can read the scale correctly. The number you see on a given morning is a sum of several things:</p>
       <ul>
-        <li><strong>Clothes</strong> — handled by the calibration tasks in the <a style="color: #059669; border-bottom: 1px solid #bbf7d0;" href="guide.html">guide</a>.</li>
+        <li><strong>Clothes</strong> — handled by the calibration tasks in the <a style="color: #0d9488; border-bottom: 1px solid #99f6e4;" href="guide.html">guide</a>.</li>
         <li><strong>Body water</strong> — fluctuates minute to minute with salt, hydration, hormones.</li>
         <li><strong>Glycogen water</strong> — every gram of stored carbohydrate carries roughly 3 g of bound water with it. Empty glycogen during a fast and you lose 1–2 kg of pure water that has nothing to do with fat.</li>
         <li><strong>Stool and urine in transit</strong> — measurable, sometimes meaningful, gone after the next bathroom trip.</li>

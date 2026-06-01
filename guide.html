@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Trim — PSMF guide</title>
+<title>Metabolica v0.1 — PSMF guide</title>
 <meta name="description" content="Protein-sparing modified fast guide and preparation checklist.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -34,14 +34,17 @@
     position: sticky; top: 0; z-index: 50;
   }
   .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
-  .brand .accent { color: #059669; }
+  .brand .version {
+    font-size: 11px; font-weight: 600; color: #aaa; letter-spacing: 0; margin-left: 3px;
+  }
+  .brand .accent { color: #0d9488; }
   .topbar-right { display: flex; align-items: center; gap: 4px; }
   .auth-state {
     font-size: 12px; color: #666; padding: 6px 10px;
     border-radius: 6px; cursor: pointer; transition: background 0.15s;
   }
   .auth-state:hover { background: #f4f4f4; }
-  .auth-state.signed-in { color: #059669; }
+  .auth-state.signed-in { color: #0d9488; }
   .icon-btn {
     background: none; border: none; cursor: pointer;
     width: 38px; height: 38px;
@@ -66,7 +69,7 @@
   }
   .sub-tab:hover { color: #555; }
   .sub-tab.active {
-    color: #059669; border-bottom-color: #059669; font-weight: 600;
+    color: #0d9488; border-bottom-color: #0d9488; font-weight: 600;
   }
 
   /* CONTENT */
@@ -79,9 +82,9 @@
 
   /* GUIDE */
   .guide-intro {
-    padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0;
+    padding: 16px; background: #f0fdfa; border: 1px solid #99f6e4;
     border-radius: 10px; margin-bottom: 22px;
-    font-size: 13.5px; color: #14532d; line-height: 1.65;
+    font-size: 13.5px; color: #115e59; line-height: 1.65;
   }
 
   /* CHECKLIST */
@@ -97,7 +100,7 @@
     font-size: 14.5px; font-weight: 700; color: #111;
   }
   .checklist-count {
-    font-size: 11.5px; font-weight: 600; color: #059669;
+    font-size: 11.5px; font-weight: 600; color: #0d9488;
   }
   .checklist-intro {
     font-size: 12.5px; color: #666; line-height: 1.55;
@@ -109,7 +112,7 @@
   .checklist-group:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
   .checklist-group h4 {
     font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: #15803d; font-weight: 700; margin-bottom: 6px;
+    color: #0f766e; font-weight: 700; margin-bottom: 6px;
   }
   .checklist-item {
     display: flex; align-items: flex-start; gap: 12px;
@@ -119,7 +122,7 @@
   .checklist-item:hover { background: #fafafa; }
   .checklist-item input {
     margin-top: 4px; width: 16px; height: 16px;
-    accent-color: #059669; flex-shrink: 0; cursor: pointer;
+    accent-color: #0d9488; flex-shrink: 0; cursor: pointer;
   }
   .checklist-item .item-title {
     font-size: 14px; font-weight: 600; color: #111;
@@ -184,21 +187,21 @@
     transition: color 0.15s;
   }
   .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.7; }
-  .nav-btn.active { color: #059669; }
+  .nav-btn.active { color: #0d9488; }
   .nav-btn:hover { color: #555; }
-  .nav-btn.active:hover { color: #059669; }
+  .nav-btn.active:hover { color: #0d9488; }
   .add-btn-wrap { display: flex; justify-content: center; }
   .add-btn {
-    background: #059669; color: #fff; border: none;
+    background: #0d9488; color: #fff; border: none;
     width: 60px; height: 60px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    margin-top: -30px; box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+    margin-top: -30px; box-shadow: 0 6px 18px rgba(13, 148, 136, 0.35);
     transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
     text-decoration: none;
   }
   .add-btn:hover {
-    background: #047857; transform: scale(1.05);
-    box-shadow: 0 8px 22px rgba(5, 150, 105, 0.45);
+    background: #0f766e; transform: scale(1.05);
+    box-shadow: 0 8px 22px rgba(13, 148, 136, 0.45);
   }
   .add-btn:active { transform: scale(0.98); }
   .add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.6; }
@@ -211,7 +214,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Trim</div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
   </div>
@@ -327,7 +330,7 @@
           <input type="checkbox" data-key="weight-app">
           <div class="item-body">
             <span class="item-title">Weight-tracking app</span>
-            <span class="item-note">Libra Weight Manager (Android) is the established choice. Or use the Trim tracker on this site if it works well for you.</span>
+            <span class="item-note">Libra Weight Manager (Android) is the established choice. Or use the Metabolica tracker on this site if it works well for you.</span>
           </div>
         </label>
       </div>

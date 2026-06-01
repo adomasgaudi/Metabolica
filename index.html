@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Trim — weight tracker</title>
+<title>Metabolica v0.1 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -34,14 +34,21 @@
     position: sticky; top: 0; z-index: 50;
   }
   .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
-  .brand .accent { color: #059669; }
+  .brand .version {
+    font-size: 11px; font-weight: 600; color: #aaa; letter-spacing: 0; margin-left: 3px;
+  }
+  .brand .accent {
+    background: linear-gradient(120deg, #059669 0%, #0891b2 50%, #0284c7 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #0891b2;
+  }
   .topbar-right { display: flex; align-items: center; gap: 4px; }
   .auth-state {
     font-size: 12px; color: #666; padding: 6px 10px;
     border-radius: 6px; cursor: pointer; transition: background 0.15s;
   }
   .auth-state:hover { background: #f4f4f4; }
-  .auth-state.signed-in { color: #059669; }
+  .auth-state.signed-in { color: #0d9488; }
   .icon-btn {
     background: none; border: none; cursor: pointer;
     width: 38px; height: 38px;
@@ -78,7 +85,7 @@
     font-size: 20px; font-weight: 700; color: #111; letter-spacing: -0.01em;
   }
   .stat-card .value.up { color: #dc2626; }
-  .stat-card .value.down { color: #059669; }
+  .stat-card .value.down { color: #0d9488; }
   .stat-card .unit {
     font-size: 11px; color: #888; font-weight: 500; margin-left: 2px;
   }
@@ -125,20 +132,21 @@
     transition: color 0.15s;
   }
   .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.7; }
-  .nav-btn.active { color: #059669; }
+  .nav-btn.active { color: #0d9488; }
   .nav-btn:hover { color: #555; }
-  .nav-btn.active:hover { color: #059669; }
+  .nav-btn.active:hover { color: #0d9488; }
   .add-btn-wrap { display: flex; justify-content: center; }
   .add-btn {
-    background: #059669; color: #fff; border: none;
+    background: linear-gradient(135deg, #059669 0%, #0891b2 55%, #0284c7 100%);
+    color: #fff; border: none;
     width: 60px; height: 60px; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    margin-top: -30px; box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
-    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    margin-top: -30px; box-shadow: 0 6px 18px rgba(8, 145, 178, 0.35);
+    transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
   }
   .add-btn:hover {
-    background: #047857; transform: scale(1.05);
-    box-shadow: 0 8px 22px rgba(5, 150, 105, 0.45);
+    filter: brightness(0.93); transform: scale(1.05);
+    box-shadow: 0 8px 22px rgba(8, 145, 178, 0.45);
   }
   .add-btn:active { transform: scale(0.98); }
   .add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.6; }
@@ -192,19 +200,19 @@
   }
   .form-row textarea { resize: vertical; min-height: 56px; }
   .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
-    outline: none; border-color: #059669;
-    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+    outline: none; border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
   }
   .form-help {
     font-size: 11.5px; color: #888; margin-top: 4px; line-height: 1.4;
   }
   .btn-primary {
-    background: #059669; color: #fff; border: none;
+    background: #0d9488; color: #fff; border: none;
     width: 100%; padding: 13px; border-radius: 8px;
     font-size: 15px; font-weight: 600; cursor: pointer;
     transition: background 0.15s; margin-top: 6px;
   }
-  .btn-primary:hover { background: #047857; }
+  .btn-primary:hover { background: #0f766e; }
   .btn-secondary {
     background: #f4f4f4; color: #555; border: none;
     width: 100%; padding: 11px; border-radius: 8px;
@@ -226,13 +234,13 @@
     background: #fff; cursor: pointer; text-align: left;
     transition: border-color 0.15s, background 0.15s;
   }
-  .picker-btn:hover { border-color: #059669; background: #f0fdf4; }
-  .picker-btn.active { border-color: #059669; background: #f0fdf4; }
+  .picker-btn:hover { border-color: #0d9488; background: #f0fdfa; }
+  .picker-btn.active { border-color: #0d9488; background: #f0fdfa; }
   .picker-btn.admin { grid-column: 1 / -1; }
   .picker-btn .pk-avatar {
     width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    background: #d1fae5; color: #059669; font-weight: 700; font-size: 16px;
+    background: #ccfbf1; color: #0d9488; font-weight: 700; font-size: 16px;
   }
   .picker-btn.admin .pk-avatar { background: #fef3c7; color: #b45309; }
   .picker-btn .pk-name { font-size: 14.5px; font-weight: 600; color: #111; }
@@ -243,14 +251,14 @@
   /* ADMIN: topbar icon shown only when signed in as admin */
   .admin-only { display: none !important; }
   body.is-admin .admin-only { display: inline-flex !important; }
-  .icon-btn.admin-only { color: #059669; }
+  .icon-btn.admin-only { color: #0d9488; }
 
   /* ADMIN: users view */
   .admin-toolbar {
     display: flex; gap: 8px; margin-bottom: 18px;
   }
   .admin-toolbar .btn-tool {
-    flex: 1; background: #059669; color: #fff; border: none;
+    flex: 1; background: #0d9488; color: #fff; border: none;
     padding: 11px; border-radius: 8px;
     font-size: 13.5px; font-weight: 600; cursor: pointer;
     transition: background 0.15s;
@@ -258,7 +266,7 @@
   .admin-toolbar .btn-tool.ghost {
     background: #f4f4f4; color: #555;
   }
-  .admin-toolbar .btn-tool:hover { background: #047857; }
+  .admin-toolbar .btn-tool:hover { background: #0f766e; }
   .admin-toolbar .btn-tool.ghost:hover { background: #ebebeb; }
 
   .user-card {
@@ -269,7 +277,7 @@
     background: #fff; cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
   }
-  .user-card:hover { border-color: #059669; background: #f0fdf4; }
+  .user-card:hover { border-color: #0d9488; background: #f0fdfa; }
   .user-card .uc-email {
     font-size: 14px; font-weight: 600; color: #111;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -278,8 +286,8 @@
     font-size: 11.5px; color: #888; margin-top: 2px;
   }
   .user-card .uc-count {
-    font-size: 13px; font-weight: 600; color: #059669;
-    background: #d1fae5; padding: 4px 9px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; color: #0d9488;
+    background: #ccfbf1; padding: 4px 9px; border-radius: 999px;
   }
   .user-card .uc-delete {
     background: none; border: none; cursor: pointer;
@@ -405,17 +413,17 @@
   /* FACTS PANEL */
   .facts {
     margin-top: 22px; padding: 18px;
-    background: #f0fdf4; border: 1px solid #bbf7d0;
+    background: #f0fdfa; border: 1px solid #99f6e4;
     border-radius: 10px; display: none;
   }
   .facts.visible { display: block; }
   .facts h3 {
     font-size: 11.5px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: #15803d; margin-bottom: 14px;
+    letter-spacing: 0.06em; color: #0f766e; margin-bottom: 14px;
   }
   .fact {
     display: flex; justify-content: space-between; align-items: baseline;
-    font-size: 14px; padding: 7px 0; border-bottom: 1px solid #d1fae5;
+    font-size: 14px; padding: 7px 0; border-bottom: 1px solid #ccfbf1;
   }
   .fact:last-child { border-bottom: none; }
   .fact .fact-label { color: #555; }
@@ -435,7 +443,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Trim</div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
     <button id="admin-btn" class="icon-btn admin-only" aria-label="Admin — manage users">
@@ -751,7 +759,7 @@
       <button class="modal-close">×</button>
     </div>
     <p style="font-size: 12.5px; color: #666; margin-bottom: 10px; line-height: 1.5;">
-      Paste the contents of a Trim export <code>.json</code> file. For huge files (lots of photos) use the Import button instead.
+      Paste the contents of a Metabolica export <code>.json</code> file. For huge files (lots of photos) use the Import button instead.
     </p>
     <textarea id="paste-textarea" class="paste-area" placeholder='{ "trim_export": 2, ... }'></textarea>
     <button id="paste-confirm" class="btn-primary" type="button">Import</button>
@@ -767,6 +775,8 @@
 <!-- SCRIPT -->
 <!-- ═══════════════════════════════════════════════ -->
 
+<!-- Adomas's weight log, generated from data/Libra_2026-06-01.csv -->
+<script src="seed-adomas.js"></script>
 <script>
 /* ============================================================
    Trim — tracker page
@@ -863,6 +873,30 @@ const Store = (() => {
     getChecklist() { return read(uk(K.CHECKLIST), {}); },
   };
 })();
+
+/* ============================================================
+   Seed — one-time import of Adomas's weight log from the bundled
+   Libra export (window.ADOMAS_SEED, generated from
+   data/Libra_2026-06-01.csv). Runs once and only when Adomas's
+   log is still empty, so it never clobbers later edits or
+   re-adds entries the user has deleted.
+   ============================================================ */
+const Seed = {
+  FLAG: 'trim.seed.adomas.v1',
+  LOG_KEY: 'trim.log.v1::adomas',
+  run() {
+    try {
+      if (localStorage.getItem(this.FLAG)) return;
+      const seed = window.ADOMAS_SEED;
+      if (!Array.isArray(seed) || !seed.length) return;
+      const existing = JSON.parse(localStorage.getItem(this.LOG_KEY) || '[]');
+      if (!Array.isArray(existing) || existing.length === 0) {
+        localStorage.setItem(this.LOG_KEY, JSON.stringify(seed));
+      }
+      localStorage.setItem(this.FLAG, '1');
+    } catch { /* storage unavailable — skip silently */ }
+  },
+};
 
 /* ============================================================
    IndexedDB wrapper — async key-value-ish access for large data
@@ -1085,6 +1119,17 @@ const UI = (() => {
   const $$ = sel => document.querySelectorAll(sel);
   let chart = null;
   let viewerChart = null;
+
+  // Scriptable Chart.js color: a green→blue gradient across the plot width.
+  function greenBlueLine(ctx) {
+    const area = ctx.chart.chartArea;
+    if (!area) return '#0891b2';
+    const g = ctx.chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+    g.addColorStop(0, '#059669');
+    g.addColorStop(0.55, '#0891b2');
+    g.addColorStop(1, '#0284c7');
+    return g;
+  }
   let pendingMealPhotos = [];  // dataURLs queued in the add-meal modal
 
   function setView(name) {
@@ -1136,10 +1181,10 @@ const UI = (() => {
         labels: sorted.map(e => Fmt.shortDate(e.date)),
         datasets: [{
           data: sorted.map(e => e.weight),
-          borderColor: '#059669',
-          backgroundColor: 'rgba(5, 150, 105, 0.08)',
+          borderColor: greenBlueLine,
+          backgroundColor: 'rgba(8, 145, 178, 0.07)',
           borderWidth: 2.5, tension: 0.32, fill: true,
-          pointRadius: 3.5, pointBackgroundColor: '#059669',
+          pointRadius: 3.5, pointBackgroundColor: '#0891b2',
           pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6,
         }],
       },
@@ -1346,10 +1391,10 @@ const UI = (() => {
           labels: sorted.map(e => Fmt.shortDate(e.date)),
           datasets: [{
             data: sorted.map(e => e.weight),
-            borderColor: '#059669',
-            backgroundColor: 'rgba(5, 150, 105, 0.08)',
+            borderColor: greenBlueLine,
+            backgroundColor: 'rgba(8, 145, 178, 0.07)',
             borderWidth: 2.5, tension: 0.32, fill: true,
-            pointRadius: 3, pointBackgroundColor: '#059669',
+            pointRadius: 3, pointBackgroundColor: '#0891b2',
             pointBorderColor: '#fff', pointBorderWidth: 2,
           }],
         },
@@ -1481,6 +1526,7 @@ const UI = (() => {
   }
 
   function init() {
+    Seed.run();  // populate Adomas's log from the bundled Libra export (once)
     // Bottom-nav buttons (data-view only — Guide is a separate <a> link)
     $$('.nav-btn[data-view]').forEach(btn => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
