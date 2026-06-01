@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.2 — weight tracker</title>
+<title>Metabolica v0.2.1 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <!-- Tier gate: the full tracker is the "beta" tier. Anyone without beta access
      (the default "alpha" tier) is bounced to the guide before the app loads. -->
@@ -82,6 +82,18 @@
     padding: 6px 14px; border-radius: 8px; cursor: pointer;
   }
   .beta-btn:hover { background: #cffafe; }
+  .tier-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 3px 8px; border-radius: 6px; text-transform: uppercase;
+  }
+  .tier-badge-alpha { background: #fef3c7; color: #b45309; }
+  .tier-badge-beta { background: #cffafe; color: #0e7490; }
+  .tier-exit {
+    font-size: 12px; font-weight: 600; color: #64748b;
+    background: #f1f5f9; border: 1px solid #e2e8f0;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  }
+  .tier-exit:hover { background: #e2e8f0; }
   body.tier-alpha .nav-locked {
     color: #cbd5e1 !important; pointer-events: none; cursor: default;
   }
@@ -577,9 +589,11 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.1</span></div>
   <div class="topbar-right">
+    <span id="tier-badge" class="tier-badge tier-badge-alpha">ALPHA</span>
     <button id="beta-btn" class="beta-btn alpha-only" type="button">Beta</button>
+    <button id="exit-beta-btn" class="tier-exit beta-only" type="button">Exit beta</button>
     <span id="auth-state" class="auth-state beta-only">Sign in</span>
     <button id="admin-btn" class="icon-btn admin-only beta-only" aria-label="Admin — manage users">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -1297,9 +1311,15 @@ const UI = (() => {
     get() { try { return localStorage.getItem(this.KEY) === 'beta' ? 'beta' : 'alpha'; } catch (e) { return 'alpha'; } },
     set(t) { try { localStorage.setItem(this.KEY, t); } catch (e) {} },
   };
-  function applyTier() { document.body.classList.toggle('tier-alpha', Tier.get() === 'alpha'); }
+  function applyTier() {
+    const t = Tier.get();
+    document.body.classList.toggle('tier-alpha', t === 'alpha');
+    const badge = $('#tier-badge');
+    if (badge) { badge.textContent = t.toUpperCase(); badge.className = 'tier-badge tier-badge-' + t; }
+  }
   function wireBetaGate() {
     const gate = $('#beta-gate');
+    $('#exit-beta-btn')?.addEventListener('click', () => { Tier.set('alpha'); location.href = 'guide.html'; });
     if (!gate) return;
     const open = () => { $('#beta-error').hidden = true; $('#beta-pass').value = ''; gate.hidden = false; setTimeout(() => $('#beta-pass').focus(), 50); };
     const tryUnlock = () => {
