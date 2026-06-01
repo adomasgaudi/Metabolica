@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.2.2 — weight tracker</title>
+<title>Metabolica v0.2.3 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <!-- Tier gate: the full tracker is the "alpha" (testing) tier. Anyone without
      alpha access (the default "beta" tier) is bounced to the guide before load. -->
@@ -187,6 +187,14 @@
   .lg-sw { width: 14px; height: 3px; border-radius: 2px; }
   .lg-weight { background: #0891b2; }
   .lg-avg { background: #f59e0b; }
+  /* "Fit to data" — snaps the free-pan/zoom view back to the data range. */
+  .chart-fit {
+    position: absolute; bottom: 10px; right: 10px; z-index: 6;
+    font-size: 11.5px; font-weight: 600; color: #0e7490;
+    background: rgba(255,255,255,0.9); border: 1px solid #a5f3fc;
+    border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+  .chart-fit:hover { background: #ecfeff; }
 
   /* SETTINGS PANEL (above the chart, collapsed by default to maximize chart) */
   .chart-settings {
@@ -589,7 +597,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.2</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.3</span></div>
   <div class="topbar-right">
     <span id="tier-badge" class="tier-badge tier-badge-beta">BETA</span>
     <button id="beta-btn" class="beta-btn restricted-only" type="button">Alpha</button>
@@ -639,6 +647,7 @@
       <div class="chart-scroll">
         <canvas id="weightChart"></canvas>
       </div>
+      <button class="chart-fit" id="chart-fit" type="button">⌖ Fit data</button>
     </div>
     <div class="empty" id="chart-empty">
       <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
@@ -1412,6 +1421,12 @@ const UI = (() => {
     const xs = sorted.map(e => new Date(e.date).getTime());
     const xMax = Math.max(...xs);
     const span = Math.max(xMax - Math.min(...xs), 86400000);
+    // Fixed y-range from the raw weights (+padding). Pinning it means changing
+    // the moving-average window never rescales the axis → no vertical jiggle.
+    const ws = sorted.map(e => e.weight);
+    const wPad = Math.max((Math.max(...ws) - Math.min(...ws)) * 0.08, 1);
+    const yMin = Math.min(...ws) - wPad;
+    const yMax = Math.max(...ws) + wPad;
 
     const ctx = $('#weightChart');
     if (chart) chart.destroy();
@@ -1447,23 +1462,23 @@ const UI = (() => {
               label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)} kg`,
             },
           },
-          // Zoom into any date range (x) and weight range (y): pinch on touch,
-          // wheel on desktop, or drag a box. Pan freely along time (no x limit);
-          // y stays bounded to the data so it can't drift into empty space.
+          // Free movement in every direction, endless: one finger pans, pinch
+          // (or wheel) zooms. No limits — pan/zoom anywhere; "Fit data" snaps
+          // back. Drag-box zoom is off so a one-finger drag always pans.
           zoom: {
             zoom: {
               wheel: { enabled: true },
               pinch: { enabled: true },
-              drag: { enabled: true, backgroundColor: 'rgba(8,145,178,0.12)', borderColor: '#0891b2', borderWidth: 1 },
+              drag: { enabled: false },
               mode: 'xy',
             },
             pan: { enabled: true, mode: 'xy' },
-            limits: { y: { min: 'original', max: 'original' } },
           },
         },
         scales: {
           y: {
             beginAtZero: false, grid: { color: '#f0f0f0' },
+            min: yMin, max: yMax,
             ticks: { color: '#888', font: { size: 11 }, callback: v => v.toFixed(1) },
             // Pin the axis width so changing tick labels (90 → 90.05) don't
             // shift the plot's left edge and jerk the whole chart sideways.
@@ -1853,8 +1868,9 @@ const UI = (() => {
       const open = panel.classList.toggle('open');
       $('#settings-toggle').setAttribute('aria-expanded', open);
     });
-    // Reset zoom/pan back to the full data range
+    // Reset zoom/pan back to the full data range (settings + floating button)
     $('#reset-zoom').addEventListener('click', () => { if (chart) chart.resetZoom(); });
+    $('#chart-fit').addEventListener('click', () => { if (chart) chart.resetZoom(); });
 
     // Keep the chart filling the screen on rotate / address-bar show-hide
     window.addEventListener('resize', sizeChart);
