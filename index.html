@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.1 — weight tracker</title>
+<title>Metabolica v0.1.1 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- date adapter: lets the chart's x-axis use a real time scale so gaps between entries render to scale -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
   /* ============================================================
      Shared styles — keep in sync with guide.html if not extracted
@@ -109,6 +111,11 @@
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;
   }
   .log-entry .weight { font-size: 15.5px; font-weight: 600; color: #111; }
+  .sanity-flag {
+    font-size: 10.5px; font-weight: 600; color: #b45309;
+    background: #fef3c7; padding: 1px 6px; border-radius: 6px;
+    margin-left: 4px; cursor: help; white-space: nowrap;
+  }
   .log-entry .delete {
     background: none; border: none; cursor: pointer;
     color: #bbb; font-size: 18px; padding: 4px 8px; border-radius: 4px;
@@ -443,7 +450,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.1</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
     <button id="admin-btn" class="icon-btn admin-only" aria-label="Admin — manage users">
@@ -775,6 +782,8 @@
 <!-- SCRIPT -->
 <!-- ═══════════════════════════════════════════════ -->
 
+<!-- Pure domain spec (validation + sanity). Separate file so it's node-testable; must load before the main script. -->
+<script src="domain.js"></script>
 <!-- Adomas's weight log, generated from data/Libra_2026-06-01.csv -->
 <script src="seed-adomas.js"></script>
 <script>
@@ -825,6 +834,10 @@ const userEmail = u => `${u.id}@trim.local`;
 const EXPORT_VERSION = 2;
 const DB_NAME = 'trim_db_v1';
 
+// Domain (pure validation + sanity spec) is loaded from domain.js before
+// this script — see the <script src="domain.js"> tag. It's a separate file
+// so it can be unit-tested with `node` (tests/domain.test.js), no build.
+
 const Store = (() => {
   const K = {
     ACTIVE: 'trim.activeUser.v1',  // global: which user is selected
@@ -858,15 +871,20 @@ const Store = (() => {
     },
 
     // ---- per-user data ----
-    getLog() { return read(uk(K.LOG), []); },
+    // Raw, untouched storage — used for writes so we never drop rows we
+    // don't understand (forward-compat with future shapes = don't lose data).
+    getLogRaw() { return read(uk(K.LOG), []); },
+    // Validated view for consumers (chart, list, stats). Fail-soft: a corrupt
+    // row is filtered out here instead of crashing every render downstream.
+    getLog() { return Domain.parseLog(this.getLogRaw()).entries; },
     saveLog(log) { write(uk(K.LOG), log); },
     addEntry(entry) {
-      const log = this.getLog();
+      const log = this.getLogRaw();
       log.push({ id: Date.now().toString(), ...entry });
       this.saveLog(log);
     },
     deleteEntry(id) {
-      this.saveLog(this.getLog().filter(e => e.id !== id));
+      this.saveLog(this.getLogRaw().filter(e => String(e.id) !== String(id)));
     },
     getProfile() { return read(uk(K.PROFILE), null); },
     saveProfile(p) { write(uk(K.PROFILE), p); },
@@ -1082,10 +1100,9 @@ const Importer = {
     let obj;
     try { obj = JSON.parse(text); }
     catch { return { ok: false, error: 'Not valid JSON.' }; }
-    if (!obj || typeof obj !== 'object') return { ok: false, error: 'Payload is not an object.' };
-    if (!obj.trim_export) return { ok: false, error: 'Missing trim_export marker — wrong file?' };
-    if (!obj.user || !obj.user.email) return { ok: false, error: 'Missing user.email.' };
-    return { ok: true, payload: obj };
+    // Shape + per-row validation lives in Domain (the durable spec); this
+    // cleans the log fail-soft and reports how many rows were skipped.
+    return Domain.validatePayload(obj);
   },
   async readFile(file) {
     return new Promise((res, rej) => {
@@ -1178,9 +1195,8 @@ const UI = (() => {
     chart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: sorted.map(e => Fmt.shortDate(e.date)),
         datasets: [{
-          data: sorted.map(e => e.weight),
+          data: sorted.map(e => ({ x: new Date(e.date).getTime(), y: e.weight })),
           borderColor: greenBlueLine,
           backgroundColor: 'rgba(8, 145, 178, 0.07)',
           borderWidth: 2.5, tension: 0.32, fill: true,
@@ -1194,12 +1210,20 @@ const UI = (() => {
           legend: { display: false },
           tooltip: {
             backgroundColor: '#111', padding: 10, displayColors: false,
-            callbacks: { label: c => c.parsed.y.toFixed(1) + ' kg' },
+            callbacks: {
+              title: items => Fmt.date(items[0].parsed.x),
+              label: c => c.parsed.y.toFixed(1) + ' kg',
+            },
           },
         },
         scales: {
           y: { beginAtZero: false, grid: { color: '#f0f0f0' }, ticks: { color: '#888', font: { size: 11 } } },
-          x: { grid: { display: false }, ticks: { color: '#888', font: { size: 11 } } },
+          x: {
+            type: 'time',
+            time: { displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy' } },
+            grid: { display: false },
+            ticks: { color: '#888', font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+          },
         },
       },
     });
@@ -1218,17 +1242,22 @@ const UI = (() => {
     list.style.display = 'block';
     empty.style.display = 'none';
     const sorted = [...log].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const flags = Domain.sanityFlags(log);  // spot-check: surface odd numbers, don't hide them
     sorted.forEach(entry => {
       const li = document.createElement('li');
       li.className = 'log-entry';
       const clothesPart = entry.clothesWeight ? ` · clothes ${entry.clothesWeight}kg` : '';
       const notesText = (entry.notes || '') + clothesPart;
+      const issues = flags.get(entry.id);
+      const flagHTML = issues
+        ? `<span class="sanity-flag" title="${escapeHTML(issues.join('; '))}">⚠ check</span>`
+        : '';
       li.innerHTML = `
         <div class="date-block">
           <div class="date">${Fmt.dateTime(entry.date)}</div>
           ${notesText ? `<div class="notes">${escapeHTML(notesText)}</div>` : ''}
         </div>
-        <span class="weight">${entry.weight.toFixed(1)} kg</span>
+        <span class="weight">${Number(entry.weight).toFixed(1)} kg ${flagHTML}</span>
         <button class="delete" data-id="${entry.id}" aria-label="Delete">×</button>
       `;
       list.appendChild(li);
@@ -1388,9 +1417,8 @@ const UI = (() => {
       viewerChart = new Chart($('#v-chart'), {
         type: 'line',
         data: {
-          labels: sorted.map(e => Fmt.shortDate(e.date)),
           datasets: [{
-            data: sorted.map(e => e.weight),
+            data: sorted.map(e => ({ x: new Date(e.date).getTime(), y: e.weight })),
             borderColor: greenBlueLine,
             backgroundColor: 'rgba(8, 145, 178, 0.07)',
             borderWidth: 2.5, tension: 0.32, fill: true,
@@ -1403,11 +1431,19 @@ const UI = (() => {
           plugins: {
             legend: { display: false },
             tooltip: { backgroundColor: '#111', padding: 10, displayColors: false,
-              callbacks: { label: c => c.parsed.y.toFixed(1) + ' kg' } },
+              callbacks: {
+                title: items => Fmt.date(items[0].parsed.x),
+                label: c => c.parsed.y.toFixed(1) + ' kg',
+              } },
           },
           scales: {
             y: { beginAtZero: false, grid: { color: '#f0f0f0' }, ticks: { color: '#888', font: { size: 10 } } },
-            x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } },
+            x: {
+              type: 'time',
+              time: { displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy' } },
+              grid: { display: false },
+              ticks: { color: '#888', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+            },
           },
         },
       });
@@ -1711,6 +1747,9 @@ const UI = (() => {
           if (!result.ok) { fail++; errors.push(`${file.name}: ${result.error}`); continue; }
           await Imports.save(result.payload);
           ok++;
+          if (result.report && result.report.logRejected) {
+            errors.push(`${file.name}: skipped ${result.report.logRejected} invalid weight row(s)`);
+          }
         } catch (err) {
           fail++;
           errors.push(`${file.name}: ${err.message}`);
@@ -1719,7 +1758,8 @@ const UI = (() => {
       e.target.value = '';
       renderUsers();
       let msg = `Imported ${ok} file${ok === 1 ? '' : 's'}.`;
-      if (fail) msg += `\n${fail} failed:\n` + errors.join('\n');
+      if (fail) msg += `\n${fail} failed.`;
+      if (errors.length) msg += `\n` + errors.join('\n');
       alert(msg);
     });
 
