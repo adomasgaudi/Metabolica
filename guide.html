@@ -32,12 +32,17 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 20px; border-bottom: 1px solid #eee; background: #fff;
     position: sticky; top: 0; z-index: 50;
+    min-height: 70px; box-sizing: border-box;
   }
   .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   .brand .version {
     font-size: 11px; font-weight: 600; color: #aaa; letter-spacing: 0; margin-left: 3px;
   }
-  .brand .accent { color: #0d9488; }
+  .brand .accent {
+    background: linear-gradient(120deg, #059669 0%, #0891b2 50%, #0284c7 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #0891b2;
+  }
   .topbar-right { display: flex; align-items: center; gap: 4px; }
   .auth-state {
     font-size: 12px; color: #666; padding: 6px 10px;
@@ -124,13 +129,28 @@
     margin-top: 4px; width: 16px; height: 16px;
     accent-color: #0d9488; flex-shrink: 0; cursor: pointer;
   }
+  .checklist-item .item-body { flex: 1; min-width: 0; }
   .checklist-item .item-title {
     font-size: 14px; font-weight: 600; color: #111;
     display: block; margin-bottom: 1px; line-height: 1.4;
   }
+  /* Note is collapsed by default; clicking the row reveals it. */
   .checklist-item .item-note {
     font-size: 12.5px; color: #666; line-height: 1.5;
+    display: block; max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.2s ease;
   }
+  .checklist-item.expanded .item-note {
+    max-height: 320px; opacity: 1; margin-top: 4px;
+  }
+  /* Chevron — points down when collapsed, flips up when expanded. */
+  .checklist-item .item-chevron {
+    flex-shrink: 0; margin-top: 5px; color: #bbb;
+    transition: transform 0.2s ease, color 0.12s;
+  }
+  .checklist-item .item-chevron svg { display: block; width: 14px; height: 14px; }
+  .checklist-item:hover .item-chevron { color: #888; }
+  .checklist-item.expanded .item-chevron { transform: rotate(180deg); }
   .checklist-item input:checked ~ .item-body .item-title {
     text-decoration: line-through; color: #888; font-weight: 500;
   }
@@ -176,7 +196,7 @@
     position: fixed; bottom: 0; left: 0; right: 0;
     max-width: 480px; margin: 0 auto; background: #fff;
     border-top: 1px solid #eee; padding: 6px 14px 10px;
-    display: grid; grid-template-columns: 1fr 1fr 84px 1fr;
+    display: grid; grid-template-columns: 1fr 1fr 84px 1fr 1fr;
     gap: 4px; align-items: center; z-index: 100;
   }
   .nav-btn {
@@ -214,7 +234,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.1</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
   </div>
@@ -248,127 +268,127 @@
 
       <div class="checklist-group">
         <h4>Hardware</h4>
-        <label class="checklist-item">
+        <div class="checklist-item">
           <input type="checkbox" data-key="scale-body">
           <div class="item-body">
             <span class="item-title">Bathroom scale</span>
             <span class="item-note">Same scale, same spot, same time each morning. Daily weigh-ins feed the chart in this app.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="scale-kitchen">
           <div class="item-body">
             <span class="item-title">Small kitchen scale</span>
             <span class="item-note">For weighing protein portions. "1.5 g/kg of bodyweight" needs grams, not guesses.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="measuring-tools">
           <div class="item-body">
             <span class="item-title">Measuring cups & spoons</span>
             <span class="item-note">For electrolyte doses and water targets.</span>
           </div>
-        </label>
+        </div>
       </div>
 
       <div class="checklist-group">
         <h4>Electrolytes &amp; supplies</h4>
-        <label class="checklist-item">
+        <div class="checklist-item">
           <input type="checkbox" data-key="salt">
           <div class="item-body">
             <span class="item-title">Plain salt (sodium)</span>
             <span class="item-note">3–5 g of sodium per day. Plain table or sea salt is fine.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="potassium">
           <div class="item-body">
             <span class="item-title">Potassium chloride ("lite salt")</span>
             <span class="item-note">For 1–3 g potassium per day. Buy ahead — kidneys flush it hard on low-carb.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="magnesium">
           <div class="item-body">
             <span class="item-title">Magnesium glycinate or citrate</span>
             <span class="item-note">300–400 mg, with dinner. Avoid oxide — it absorbs poorly.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="sweetener">
           <div class="item-body">
             <span class="item-title">Sweetener — <strong>stevia drops preferred</strong></span>
             <span class="item-note">Pick something you tolerate on an empty stomach. Pure stevia drops are the safest. Stevia + erythritol blends often work but are more dubious — some people get GI issues on an empty stomach. Avoid xylitol-style polyols when fasting — intolerance gets worse without food to buffer it.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="chia">
           <div class="item-body">
             <span class="item-title">Chia pack (≈100 g) to carry</span>
             <span class="item-note">Pocket emergency food. Adds a small protein/fibre buffer if you are away from your kitchen and need to hold off a bad decision.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="protein-week1">
           <div class="item-body">
             <span class="item-title">Lean protein for week 1</span>
             <span class="item-note">Chicken breast, white fish, eggs, low-fat dairy, plus leafy greens. Remove the snacks that will tempt you on day 4.</span>
           </div>
-        </label>
+        </div>
       </div>
 
       <div class="checklist-group">
         <h4>Apps &amp; tools on phone</h4>
-        <label class="checklist-item">
+        <div class="checklist-item">
           <input type="checkbox" data-key="ai-assistant">
           <div class="item-body">
             <span class="item-title">Fast-access AI assistant on phone</span>
             <span class="item-note">For scanning food labels and asking "how much protein in this cut?" in the store. Friction here causes decision fatigue, and decision fatigue is how the plan fails. Make the AI one tap away.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="weight-app">
           <div class="item-body">
             <span class="item-title">Weight-tracking app</span>
             <span class="item-note">Libra Weight Manager (Android) is the established choice. Or use the Metabolica tracker on this site if it works well for you.</span>
           </div>
-        </label>
+        </div>
       </div>
 
       <div class="checklist-group">
         <h4>Calibration — do these once, before day 1</h4>
-        <label class="checklist-item">
+        <div class="checklist-item">
           <input type="checkbox" data-key="cal-clothes">
           <div class="item-body">
             <span class="item-title">Weigh your clothes</span>
             <span class="item-note">Weigh one heavier outfit and one lighter outfit on the kitchen scale. You weigh daily — you will not always strip down — so you need a good guess for the "with clothes" offset. Write the numbers somewhere you will find later.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="cal-toilet">
           <div class="item-body">
             <span class="item-title">Measure the toilet delta</span>
             <span class="item-note">One morning: step on the scale, use the toilet, step on again. The difference is your typical morning toilet delta. Knowing it makes the daily weigh-in less noisy.</span>
           </div>
-        </label>
-        <label class="checklist-item">
+        </div>
+        <div class="checklist-item">
           <input type="checkbox" data-key="cal-fluctuation">
           <div class="item-body">
             <span class="item-title">Measure the natural daily fluctuation</span>
             <span class="item-note">Weigh in the morning, then again 2–3 hours later without eating or drinking. Roughly 100 g/hour decrease is normal (sweat, breath). Once you know your fluctuation range, you stop misreading noise as a trend.</span>
           </div>
-        </label>
+        </div>
       </div>
 
       <div class="checklist-group">
         <h4>Medical</h4>
-        <label class="checklist-item">
+        <div class="checklist-item">
           <input type="checkbox" data-key="doctor">
           <div class="item-body">
             <span class="item-title">Talk to a doctor</span>
             <span class="item-note">Especially if you take medication, are pregnant, are under 18, or have any history of kidney, liver, heart, or eating-disorder issues. PSMF is a real medical intervention.</span>
           </div>
-        </label>
+        </div>
       </div>
     </div>
 
@@ -472,6 +492,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </a>
   </div>
+  <a class="nav-btn" href="index.html#diet">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+    <span>Diet</span>
+  </a>
   <button class="nav-btn active">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v15a2 2 0 0 0 2 2h13"/><path d="M4 4h13a2 2 0 0 1 2 2v13H6a2 2 0 0 0-2 2"/></svg>
     <span>Guide</span>
@@ -557,9 +581,26 @@ const UI = (() => {
     renderChecklistCount();
   }
 
+  // Each item starts collapsed; clicking the row (anywhere but the checkbox)
+  // toggles its note open. The checkbox stays dedicated to ticking progress.
+  function initExpandable() {
+    $$('.checklist-item').forEach(item => {
+      const chev = document.createElement('span');
+      chev.className = 'item-chevron';
+      chev.setAttribute('aria-hidden', 'true');
+      chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+      item.appendChild(chev);
+      item.addEventListener('click', e => {
+        if (e.target.closest('input[type="checkbox"]')) return;
+        item.classList.toggle('expanded');
+      });
+    });
+  }
+
   function init() {
     renderAuthState();
     initChecklist();
+    initExpandable();
 
     // Tapping the auth label routes back to the tracker, where
     // the sign-in modal lives.

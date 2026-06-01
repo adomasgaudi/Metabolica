@@ -34,6 +34,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 20px; border-bottom: 1px solid #eee; background: #fff;
     position: sticky; top: 0; z-index: 50;
+    min-height: 70px; box-sizing: border-box;
   }
   .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   .brand .version {
@@ -91,7 +92,30 @@
   .stat-card .unit {
     font-size: 11px; color: #888; font-weight: 500; margin-left: 2px;
   }
-  .chart-container { position: relative; height: 280px; margin-bottom: 16px; }
+  .chart-container {
+    position: relative; height: 280px; margin-bottom: 16px;
+    overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chart-scroll { position: relative; height: 100%; min-width: 100%; }
+  .avg-control {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; margin-bottom: 18px;
+    background: #fafafa; border: 1px solid #eee; border-radius: 10px;
+  }
+  .avg-control .avg-label {
+    font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+    color: #888; font-weight: 500; white-space: nowrap;
+  }
+  .avg-control .avg-label .avg-days { color: #0891b2; font-weight: 700; }
+  .avg-control input[type="range"] {
+    flex: 1; min-width: 0; accent-color: #0891b2; height: 22px;
+  }
+  .avg-control input[type="number"] {
+    width: 58px; padding: 6px 8px; font-size: 13px; font-weight: 600;
+    color: #111; border: 1px solid #ddd; border-radius: 8px; text-align: center;
+    -moz-appearance: textfield;
+  }
 
   /* LOGS */
   .log-list {
@@ -485,8 +509,15 @@
         <div><span id="stat-days" class="value">—</span></div>
       </div>
     </div>
+    <div class="avg-control" id="avg-control">
+      <span class="avg-label">Avg over <span class="avg-days" id="avg-days">15</span> days</span>
+      <input type="range" id="avg-range" min="1" max="100" value="15" aria-label="Moving average window in days">
+      <input type="number" id="avg-number" min="1" max="100" value="15" aria-label="Moving average window in days">
+    </div>
     <div class="chart-container">
-      <canvas id="weightChart"></canvas>
+      <div class="chart-scroll">
+        <canvas id="weightChart"></canvas>
+      </div>
     </div>
     <div class="empty" id="chart-empty">
       <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
@@ -1136,6 +1167,24 @@ const UI = (() => {
   const $$ = sel => document.querySelectorAll(sel);
   let chart = null;
   let viewerChart = null;
+  let avgWindow = 15;  // trailing moving-average window, in days (1–100)
+
+  // Trailing N-day moving average. For each entry, averages every entry whose
+  // date falls within the [date - (N-1) days, date] window — calendar-based, so
+  // it stays correct even when entries aren't spaced exactly one day apart.
+  function movingAverage(sorted, days) {
+    const DAY = 86400000;
+    return sorted.map((e, i) => {
+      const end = new Date(e.date).getTime();
+      const start = end - (days - 1) * DAY;
+      let sum = 0, n = 0;
+      for (let j = i; j >= 0; j--) {
+        if (new Date(sorted[j].date).getTime() < start) break;
+        sum += sorted[j].weight; n++;
+      }
+      return { x: end, y: sum / n };
+    });
+  }
 
   // Scriptable Chart.js color: a green→blue gradient across the plot width.
   function greenBlueLine(ctx) {
@@ -1167,15 +1216,18 @@ const UI = (() => {
     const container = $('.chart-container');
     const cards = $('.stat-cards');
 
+    const avgControl = $('#avg-control');
     if (sorted.length === 0) {
       empty.style.display = 'block';
       container.style.display = 'none';
       cards.style.display = 'none';
+      avgControl.style.display = 'none';
       return;
     }
     empty.style.display = 'none';
     container.style.display = 'block';
     cards.style.display = 'grid';
+    avgControl.style.display = 'flex';
 
     const current = sorted[sorted.length - 1].weight;
     const first = sorted[0].weight;
@@ -1190,29 +1242,46 @@ const UI = (() => {
     if (change < 0) changeEl.classList.add('down');
     $('#stat-days').textContent = sorted.length;
 
+    // Widen the scroll area so dense logs stay legible — ~46px per entry,
+    // never narrower than the visible container (so few entries still fill it).
+    const scroll = container.querySelector('.chart-scroll');
+    scroll.style.width = Math.max(container.clientWidth, sorted.length * 46) + 'px';
+
     const ctx = $('#weightChart');
     if (chart) chart.destroy();
     chart = new Chart(ctx, {
       type: 'line',
       data: {
         datasets: [{
+          label: 'Weight',
           data: sorted.map(e => ({ x: new Date(e.date).getTime(), y: e.weight })),
           borderColor: greenBlueLine,
           backgroundColor: 'rgba(8, 145, 178, 0.07)',
           borderWidth: 2.5, tension: 0.32, fill: true,
           pointRadius: 3.5, pointBackgroundColor: '#0891b2',
           pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6,
+        }, {
+          label: `${avgWindow}-day avg`,
+          data: movingAverage(sorted, avgWindow),
+          borderColor: '#f59e0b',
+          borderWidth: 2.5, tension: 0.32, fill: false,
+          borderDash: [6, 4],
+          pointRadius: 0, pointHoverRadius: 5,
+          pointBackgroundColor: '#f59e0b', pointBorderColor: '#fff', pointBorderWidth: 2,
         }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true, position: 'top', align: 'end',
+            labels: { boxWidth: 14, boxHeight: 2, font: { size: 11 }, color: '#666', usePointStyle: false },
+          },
           tooltip: {
             backgroundColor: '#111', padding: 10, displayColors: false,
             callbacks: {
               title: items => Fmt.date(items[0].parsed.x),
-              label: c => c.parsed.y.toFixed(1) + ' kg',
+              label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)} kg`,
             },
           },
         },
@@ -1567,6 +1636,21 @@ const UI = (() => {
     $$('.nav-btn[data-view]').forEach(btn => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
     });
+
+    // Moving-average window control (slider + number stay in sync).
+    // `echo` rewrites both inputs; skip it for the field being typed in so a
+    // half-typed value (e.g. "2" on the way to "25") isn't clobbered.
+    const setAvg = (v, echo = true) => {
+      const n = Math.min(100, Math.max(1, Math.round(v) || 1));
+      avgWindow = n;
+      $('#avg-range').value = n;
+      if (echo) $('#avg-number').value = n;
+      $('#avg-days').textContent = n;
+      renderChart();
+    };
+    $('#avg-range').addEventListener('input', e => setAvg(e.target.value));
+    $('#avg-number').addEventListener('input', e => setAvg(e.target.value, false));
+    $('#avg-number').addEventListener('change', e => setAvg(e.target.value));
 
     // Add button
     $('#add-btn').addEventListener('click', () => {
