@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.1.3 — weight tracker</title>
+<title>Metabolica v0.1.4 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -101,12 +101,13 @@
      hides/shows). */
   #view-chart.active {
     display: flex; flex-direction: column;
-    min-height: calc(100dvh - 70px - 96px);
+    min-height: calc(100vh - 166px);   /* fallback: browsers without dvh */
+    min-height: calc(100dvh - 166px);  /* dvh tracks the visible area on mobile (no address-bar jump) */
     padding-bottom: 0;
   }
   #view-chart .stat-cards { margin-bottom: 12px; }
   .chart-container {
-    position: relative; flex: 1 1 auto; min-height: 220px;
+    position: relative; flex: 1 1 auto; min-height: 300px;
     margin-bottom: 8px; overflow: hidden;
   }
   .chart-scroll { position: relative; width: 100%; height: 100%; }
@@ -512,7 +513,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.3</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.4</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
     <button id="admin-btn" class="icon-btn admin-only" aria-label="Admin — manage users">
