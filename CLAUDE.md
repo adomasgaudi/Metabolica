@@ -15,8 +15,10 @@ hand-holding.
 
 - After the full answer, add a short **Summary** of only what the owner needs.
 - Then, on its own line in ALL CAPS, the single most burning thing — 2–10 words.
-- End with a checkbox list of unfinished/pending tasks (`- [ ] task`). Omit only
-  when nothing is pending.
+- End with a checkbox list of unfinished/pending tasks, each prefixed with a
+  one-word ALL-CAPS code `<who><priority>`: `- [ ] U1 task`. `who` = `U` (owner
+  asked) or `C` (Claude proposed); `priority` = `1` high / `2` medium / `3` low.
+  Omit the list only when nothing is pending.
 - Links go at the very bottom of the message only — never inline.
 - Annotate any command you offer with a 1–3 word description, e.g.
   `node tests/domain.test.js — run tests`.
