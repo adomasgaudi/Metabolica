@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Trim — methodology</title>
+<meta name="description" content="Why lean toward a bigger calorie deficit, with a TDEE-uncertainty calculator.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     Shared shell — keep in sync with index.html and guide.html.
+     ============================================================ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #fafafa; color: #111;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  body {
+    max-width: 480px; margin: 0 auto; min-height: 100vh;
+    display: flex; flex-direction: column;
+    background: #fff; box-shadow: 0 0 32px rgba(0,0,0,0.04);
+    position: relative;
+  }
+  button, a { font-family: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid #eee; background: #fff;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand .accent { color: #059669; }
+  .topbar-right { display: flex; align-items: center; gap: 4px; }
+  .auth-state {
+    font-size: 12px; color: #666; padding: 6px 10px;
+    border-radius: 6px; cursor: pointer; transition: background 0.15s;
+  }
+  .auth-state:hover { background: #f4f4f4; }
+  .auth-state.signed-in { color: #059669; }
+
+  /* SUB-TABS (Guide / Methodology) */
+  .sub-tabs {
+    display: flex; padding: 0 20px;
+    background: #fff; border-bottom: 1px solid #eee;
+    position: sticky; top: 65px; z-index: 49;
+  }
+  .sub-tab {
+    padding: 12px 16px; font-size: 13.5px; font-weight: 500;
+    color: #888; border-bottom: 2px solid transparent;
+    cursor: pointer; transition: color 0.15s, border-color 0.15s;
+    text-decoration: none;
+  }
+  .sub-tab:hover { color: #555; }
+  .sub-tab.active {
+    color: #059669; border-bottom-color: #059669; font-weight: 600;
+  }
+
+  /* CONTENT */
+  .content { flex: 1; padding-bottom: 96px; }
+  .view { padding: 24px 20px 12px; }
+  .view h2 {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #888; margin-bottom: 14px;
+  }
+
+  .method-intro {
+    padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 10px; margin-bottom: 22px;
+    font-size: 13.5px; color: #14532d; line-height: 1.65;
+  }
+
+  .prose {
+    background: #fff; border: 1px solid #eee; border-radius: 10px;
+    padding: 20px; margin-bottom: 18px;
+    font-size: 14px; color: #333; line-height: 1.7;
+  }
+  .prose h3 {
+    font-size: 15px; font-weight: 700; color: #111;
+    margin-bottom: 10px; margin-top: 18px;
+  }
+  .prose h3:first-child { margin-top: 0; }
+  .prose p { margin-bottom: 12px; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose ul { margin: 10px 0 12px 22px; }
+  .prose li { margin-bottom: 6px; }
+  .prose strong { color: #111; }
+  .prose em { color: #059669; font-style: normal; font-weight: 600; }
+
+  /* REFERENCE PROFILES */
+  .profiles {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 22px;
+  }
+  .profile-card {
+    background: #fafafa; border: 1px solid #eee;
+    border-radius: 10px; padding: 14px;
+  }
+  .profile-card h4 {
+    font-size: 12px; font-weight: 700; color: #15803d;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+  }
+  .profile-card .row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; padding: 4px 0;
+  }
+  .profile-card .row .lbl { color: #666; }
+  .profile-card .row .val { font-weight: 600; color: #111; }
+
+  /* CALCULATOR */
+  .calculator {
+    background: #fff; border: 1px solid #eee; border-radius: 10px;
+    padding: 20px; margin-bottom: 22px;
+  }
+  .calculator h3 {
+    font-size: 14.5px; font-weight: 700; color: #111; margin-bottom: 6px;
+  }
+  .calculator .calc-intro {
+    font-size: 12.5px; color: #666; margin-bottom: 16px; line-height: 1.55;
+  }
+  .calc-form { margin-bottom: 18px; }
+  .form-row { margin-bottom: 12px; }
+  .form-row.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row label {
+    display: block; font-size: 11.5px; font-weight: 600; color: #555;
+    margin-bottom: 5px; letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  .form-row input {
+    width: 100%; padding: 10px 12px; border: 1px solid #ddd;
+    border-radius: 7px; font-size: 14px; font-family: inherit;
+    background: #fff; color: #111;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .form-row input:focus {
+    outline: none; border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+  }
+  .calc-result {
+    padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 8px;
+  }
+  .calc-result h4 {
+    font-size: 11.5px; font-weight: 700; color: #15803d;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;
+  }
+  .calc-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 14px; padding: 8px 0; border-bottom: 1px solid #d1fae5;
+  }
+  .calc-row:last-child { border-bottom: none; }
+  .calc-row .lbl { color: #555; }
+  .calc-row .val { font-weight: 700; color: #111; font-size: 16px; }
+  .calc-row .val.warn { color: #dc2626; }
+  .calc-note {
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid #d1fae5;
+    font-size: 12px; color: #555; line-height: 1.55;
+  }
+
+  .disclaimer {
+    margin-top: 22px; padding: 14px 16px;
+    background: #fef9c3; border: 1px solid #fde68a; border-radius: 10px;
+    font-size: 12.5px; color: #713f12; line-height: 1.55;
+  }
+  .disclaimer strong { color: #422006; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    max-width: 480px; margin: 0 auto; background: #fff;
+    border-top: 1px solid #eee; padding: 6px 14px 10px;
+    display: grid; grid-template-columns: 1fr 1fr 84px 1fr;
+    gap: 4px; align-items: center; z-index: 100;
+  }
+  .nav-btn {
+    background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px;
+    padding: 8px 0 4px; color: #999; font-size: 10.5px; font-weight: 500;
+    transition: color 0.15s; text-decoration: none;
+  }
+  .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.7; }
+  .nav-btn.active { color: #059669; }
+  .nav-btn:hover { color: #555; }
+  .nav-btn.active:hover { color: #059669; }
+  .add-btn-wrap { display: flex; justify-content: center; }
+  .add-btn {
+    background: #059669; color: #fff; border: none;
+    width: 60px; height: 60px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: -30px; box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    text-decoration: none;
+  }
+  .add-btn:hover {
+    background: #047857; transform: scale(1.05);
+    box-shadow: 0 8px 22px rgba(5, 150, 105, 0.45);
+  }
+  .add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.6; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="accent">●</span> Trim</div>
+  <div class="topbar-right">
+    <span id="auth-state" class="auth-state">Sign in</span>
+  </div>
+</header>
+
+<div class="sub-tabs">
+  <a class="sub-tab" href="guide.html">Checklist & guide</a>
+  <a class="sub-tab active" href="methodology.html">Methodology</a>
+</div>
+
+<main class="content">
+  <section class="view">
+
+    <div class="method-intro">
+      Why this curriculum leans toward a <em>bigger</em> calorie deficit rather than a smaller one — and why, for someone carrying extra weight, that is usually the safer move, not the riskier one.
+    </div>
+
+    <div class="prose">
+      <h3>1. Most weight loss is safer than people think</h3>
+      <p>For an otherwise healthy person carrying extra weight, a large calorie deficit is not the danger people imagine. The body has tens of thousands of kilocalories of stored fat ready to be mobilised. As long as protein and micronutrients are covered, the deficit just tells the body to spend more of that storage.</p>
+      <p>The conditions are: no kidney, liver, heart, or eating-disorder history, no medications that interact with restriction, and enough protein, electrolytes, and micronutrients to keep lean mass and basic function. The PSMF protocol is built around exactly those conditions — protein-saturated, electrolyte-replete, short-duration. The "fasting" sounds dramatic from the outside, but the physiology is closer to a heavily-reinforced low-calorie diet than to a starvation event.</p>
+
+      <h3>2. Low deficits are exponentially harder</h3>
+      <p>The argument that does the heavy lifting: <strong>you cannot measure your calories accurately enough to make a small deficit reliable.</strong></p>
+      <p>A 100 kg man's daily energy expenditure (TDEE) is uncertain by roughly <strong>±500 kcal</strong>. For a 60 kg woman, halve everything — about <strong>±250 kcal</strong>. That is the noise on your real maintenance number, and it does not go away with better tracking apps.</p>
+      <p>Now apply this. If you eat 500 kcal below your <em>estimated</em> TDEE, your actual deficit is somewhere between <strong>0 and 1000</strong> kcal. The lower end means no progress. The upper end means rapid progress. You cannot tell which one is happening for weeks.</p>
+      <p>Compare to a 1500 kcal deficit. Your actual deficit is somewhere between <strong>1000 and 2000</strong> kcal. Both produce visible progress. The noise no longer eats your result.</p>
+      <p>The hidden math: the <em>effort</em> of a 1500 kcal deficit is not three times the effort of a 500 kcal deficit. The hard part is the early ramp. Once you are eating mostly protein and you are in a calorie-restricted state for a day or two, appetite hormones recalibrate. Pushing the deficit deeper costs surprisingly little additional willpower while doubling or tripling the rate of progress.</p>
+
+      <h3>3. PSMF is the safe way to take the bigger deficit</h3>
+      <p>PSMF combines four things at once:</p>
+      <ul>
+        <li>A <strong>large deficit</strong> — rapid fat loss.</li>
+        <li><strong>Saturating protein</strong> — preserves lean tissue.</li>
+        <li><strong>Electrolyte and micronutrient replacement</strong> — keeps you functioning.</li>
+        <li><strong>A short fixed duration</strong> — caps cumulative risk and refeeds before adaptation sets in.</li>
+      </ul>
+      <p>This is closer to a heavily-supported short fast than to a crash diet. The fasting research literature finds metabolic and inflammatory benefits from short fasts. PSMF keeps those benefits while keeping you fed enough to function and to keep muscle.</p>
+
+      <h3>4. The recommendation</h3>
+      <p><strong>Lean toward the bigger deficit, not the smaller one.</strong> A minimum 1000 kcal deficit for a 100 kg man (or 500 kcal for a 60 kg woman) is the floor below which the measurement noise eats the result. Go bigger if you can do it cleanly.</p>
+
+      <h3>5. Progress is the calibration signal</h3>
+      <p>You cannot measure your calories well enough to know your real maintenance number. But the <em>scale</em> eventually tells you. Push a bigger deficit and watch the scale move — you have learned something real about how many calories you actually burn. Push a smaller deficit and watch nothing move for two weeks — you have learned almost nothing, because nothing was <em>supposed</em> to move within the noise.</p>
+      <p>A bigger deficit is not just about losing weight faster. It is about getting a feedback signal you can read. Without that signal, you are guessing in the dark.</p>
+
+      <h3>6. Water fasting as a perspective shift</h3>
+      <p>Pure water fasting for <strong>36 hours or more</strong>, and ideally a single 2 or 3-day run at some point, is the most educational thing this program asks of you. Below five days of pure water fasting is generally safe for an otherwise healthy person, and a single 36–72 hour fast — especially once you reach ketosis — is mindset-changing in a way no diet can deliver from outside.</p>
+      <p>What changes:</p>
+      <ul>
+        <li>You discover you can go a day without eating and not collapse.</li>
+        <li>You stop wanting the things you thought you could not live without.</li>
+        <li>You see, from the inside, that "I need this snack" is mostly habit, not biology.</li>
+        <li>You eat in much smaller portions afterward, naturally.</li>
+        <li>You stop reaching for sweet, fatty, junk food, because the appetite for them is gone.</li>
+      </ul>
+      <p>The program does <em>not</em> insist on a five-day fast — that is genuinely difficult. The ask is at least one 36-hour run. Work up to a 2 or 3-day fast at least once, just to get the perspective. After that the rest of the protocol makes sense in a way it did not before.</p>
+
+      <h3>7. Electrolytes are usually the actual problem</h3>
+      <p>The most common reason someone says "I can't fast any longer" is electrolyte depletion, not hunger. Low sodium and low magnesium feel terrible — headache, weakness, dizziness, fog — and people interpret those signals as "the fast is killing me", when in fact it is the missing salt.</p>
+      <p>The program treats electrolyte management as non-negotiable. See the <a style="color: #059669; border-bottom: 1px solid #bbf7d0;" href="guide.html">guide checklist</a> for specific targets and supplies. Get this right and most "I have to stop" moments simply disappear.</p>
+
+      <h3>8. The stepped refeed</h3>
+      <p>After a fast you cannot just eat normally — refeeding too fast on carbs triggers refeeding syndrome and undoes weeks of work. The protocol after the fast:</p>
+      <ul>
+        <li><strong>Phase 1 — Fast.</strong> Hold as long as you can sustainably manage.</li>
+        <li><strong>Phase 2 — One third (or one fifth) of maintenance.</strong> Mostly protein, almost no carbs. Hold as long as you want.</li>
+        <li><strong>Phase 3 — Two thirds (or one half) of maintenance.</strong> Slowly reintroduce carbs.</li>
+        <li><strong>Phase 4 — Full maintenance.</strong> Normal eating, but with the new defaults you learned from the constraint.</li>
+      </ul>
+      <p>The process is the real product. You are not just losing weight — you are relearning what eating is for, what portion sizes mean, what kinds of food you actually want. The constraint forces you to invent new defaults.</p>
+
+      <h3>9. Autoregulative refeed — keep the scale flat</h3>
+      <p>This is the move that ties everything together. Standard diet plans are black boxes: weight fluctuates, you cannot tell what works and what does not. So the protocol goes <em>hard enough</em> to make the cause-and-effect link visible — and then exploits a peculiarity of how the scale behaves during refeed.</p>
+      <ul>
+        <li>During the fast you lose <strong>water + fat</strong>. Most of the scale drop is water.</li>
+        <li>During refeed, water returns slowly — especially if you keep carbs low. But you are still in a deficit (one third, then two thirds of maintenance), so <strong>fat continues to drop</strong>.</li>
+        <li>These two flows cancel. The scale stays the same number. But the composition underneath is changing — water is being replaced by lost fat.</li>
+      </ul>
+      <p>The protocol: <strong>adjust your calorie intake so the scale stays flat throughout the refeed</strong>. Scale ticks up → you ate too much, usually too many carbs (they pull water back fast). Cut carbs and the scale returns. Scale drops → you have headroom, you can eat a little more.</p>
+      <p>This gives two big benefits:</p>
+      <ul>
+        <li><strong>Not endless.</strong> Eventually you reach full carb eating at maintenance, still on the same scale number, but with measurably less fat than before. The refeed has an obvious end.</li>
+        <li><strong>Self-correcting.</strong> You auto-regulate by the scale — no rigid "day 5 do X, day 14 do Y" plan. The scale tells you what works, in real time. Eat too many carbs, weight bumps up, cut back, it goes down. The feedback loop is short and obvious.</li>
+      </ul>
+      <p>This is the antidote to black-box dieting. Every action has a visible consequence within 24–48 hours.</p>
+
+      <h3>10. Know what the scale is actually showing you</h3>
+      <p>The autoregulative move only works if you can read the scale correctly. The number you see on a given morning is a sum of several things:</p>
+      <ul>
+        <li><strong>Clothes</strong> — handled by the calibration tasks in the <a style="color: #059669; border-bottom: 1px solid #bbf7d0;" href="guide.html">guide</a>.</li>
+        <li><strong>Body water</strong> — fluctuates minute to minute with salt, hydration, hormones.</li>
+        <li><strong>Glycogen water</strong> — every gram of stored carbohydrate carries roughly 3 g of bound water with it. Empty glycogen during a fast and you lose 1–2 kg of pure water that has nothing to do with fat.</li>
+        <li><strong>Stool and urine in transit</strong> — measurable, sometimes meaningful, gone after the next bathroom trip.</li>
+        <li><strong>Actual fat mass</strong> — the thing you are trying to change. The slowest-moving signal in the whole pile.</li>
+      </ul>
+      <p>After a 3-day fast you may see the scale <strong>3 kg lower</strong>. Of that, maybe <strong>1 kg is fat</strong> and <strong>2 kg is water + glycogen + bowel content</strong>. Both numbers are real. They mean very different things.</p>
+
+      <h3>11. Picking the target weight</h3>
+      <p>This is the choice that defines how aggressive the refeed will be. When the fast ends, you have two natural target numbers in front of you:</p>
+      <ul>
+        <li><strong>The honest target — your real fat loss.</strong> In the example, the 1 kg drop. Easier to hold: the water comes back, the scale rises by about 2 kg, you stabilise there. You continue from this new baseline.</li>
+        <li><strong>The aggressive target — the full post-fast number.</strong> The 3 kg drop. To hold this number you have to refeed <em>very slowly</em>, keeping carbs low for a long time so that the water does not return faster than fat is being lost in the deficit. The relearning phase takes longer because every gram of returning glycogen-water must be offset by a gram of fat lost.</li>
+      </ul>
+      <p>Neither choice is wrong. The trade-off is:</p>
+      <ul>
+        <li><strong>Faster, more visible total loss</strong> (aggressive target, longer refeed).</li>
+        <li><strong>Easier, slower total loss</strong> (honest target, shorter refeed).</li>
+      </ul>
+      <p>Pick before the refeed starts. From there on, the autoregulation in section 9 takes over — the scale is held at whichever number you chose. The scale becomes your single instruction. Eat more if it dips, eat less if it rises.</p>
+    </div>
+
+    <h2>Two reference profiles</h2>
+    <p style="font-size: 12.5px; color: #666; margin-bottom: 12px; padding: 0 4px;">Halve every number for the lighter profile, double for the heavier. Useful as a baseline before you calibrate your own.</p>
+    <div class="profiles">
+      <div class="profile-card">
+        <h4>60 kg woman</h4>
+        <div class="row"><span class="lbl">TDEE est.</span><span class="val">~1900 ± 250</span></div>
+        <div class="row"><span class="lbl">Min deficit</span><span class="val">500 kcal</span></div>
+        <div class="row"><span class="lbl">Intake target</span><span class="val">~1400 kcal</span></div>
+        <div class="row"><span class="lbl">Protein</span><span class="val">~90 g</span></div>
+      </div>
+      <div class="profile-card">
+        <h4>100 kg man</h4>
+        <div class="row"><span class="lbl">TDEE est.</span><span class="val">~2800 ± 500</span></div>
+        <div class="row"><span class="lbl">Min deficit</span><span class="val">1000 kcal</span></div>
+        <div class="row"><span class="lbl">Intake target</span><span class="val">~1800 kcal</span></div>
+        <div class="row"><span class="lbl">Protein</span><span class="val">~150 g</span></div>
+      </div>
+    </div>
+
+    <h2>Time-to-goal calculator</h2>
+    <div class="calculator">
+      <h3>How long, under the noise?</h3>
+      <p class="calc-intro">Enter your low and high TDEE estimates (the range your real maintenance is likely to fall in), your daily intake, and a goal weight loss. The calculator shows how long it would take under each end of the range — so you can see how wide the band is, and decide how much harder to push the deficit.</p>
+
+      <form class="calc-form" id="calc-form">
+        <div class="form-row two">
+          <div>
+            <label for="calc-tdee-low">TDEE — low (kcal)</label>
+            <input type="number" id="calc-tdee-low" value="2300" min="500" max="6000">
+          </div>
+          <div>
+            <label for="calc-tdee-high">TDEE — high (kcal)</label>
+            <input type="number" id="calc-tdee-high" value="3300" min="500" max="6000">
+          </div>
+        </div>
+        <div class="form-row two">
+          <div>
+            <label for="calc-intake">Daily intake (kcal)</label>
+            <input type="number" id="calc-intake" value="1800" min="200" max="5000">
+          </div>
+          <div>
+            <label for="calc-goal">Goal loss (kg)</label>
+            <input type="number" id="calc-goal" value="5" step="0.5" min="0.5" max="100">
+          </div>
+        </div>
+      </form>
+
+      <div class="calc-result" id="calc-result">
+        <h4>Days to goal</h4>
+        <div class="calc-row">
+          <span class="lbl">If TDEE is at the low end</span>
+          <span class="val" id="calc-days-low">—</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl">If TDEE is at the high end</span>
+          <span class="val" id="calc-days-high">—</span>
+        </div>
+        <div class="calc-row">
+          <span class="lbl">Range (weeks)</span>
+          <span class="val" id="calc-weeks">—</span>
+        </div>
+        <p class="calc-note" id="calc-note">
+          Using 7700 kcal ≈ 1 kg of fat. The wider this band, the more your real progress is dictated by how lucky your TDEE estimate was. Deepening the deficit shrinks the band proportionally.
+        </p>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Important.</strong> The TDEE error range is a working approximation, not a precise figure. Real expenditure depends on body composition, activity, NEAT, and adaptation. A doctor or registered dietitian can give you a tighter starting estimate. Always confirm before starting a steep deficit.
+    </div>
+
+  </section>
+</main>
+
+<nav class="bottom-nav">
+  <a class="nav-btn" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
+    <span>Chart</span>
+  </a>
+  <a class="nav-btn" href="index.html#logs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
+    <span>Logs</span>
+  </a>
+  <div class="add-btn-wrap">
+    <a class="add-btn" href="index.html#add" aria-label="Add weight">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </a>
+  </div>
+  <a class="nav-btn active" href="guide.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v15a2 2 0 0 0 2 2h13"/><path d="M4 4h13a2 2 0 0 1 2 2v13H6a2 2 0 0 0-2 2"/></svg>
+    <span>Guide</span>
+  </a>
+</nav>
+
+<script>
+/* ============================================================
+   Trim — methodology page
+
+   Pure calculator. No persistence beyond the auth label on the
+   topbar (read-only). All math is at the bottom under Calc.
+   ============================================================ */
+
+const Store = (() => {
+  const read = (key, fallback) => {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return v === null ? fallback : v;
+    } catch { return fallback; }
+  };
+  return { getAuth() { return read('trim.auth.v1', null); } };
+})();
+
+const Calc = {
+  KCAL_PER_KG_FAT: 7700,
+  daysToGoal(tdee, intake, goalKg) {
+    const deficit = tdee - intake;
+    if (deficit <= 0) return null;
+    return (goalKg * this.KCAL_PER_KG_FAT) / deficit;
+  },
+};
+
+const UI = (() => {
+  const $ = sel => document.querySelector(sel);
+
+  function renderAuthState() {
+    const el = $('#auth-state');
+    const auth = Store.getAuth();
+    if (auth) {
+      el.textContent = auth.email;
+      el.classList.add('signed-in');
+    } else {
+      el.textContent = 'Sign in';
+      el.classList.remove('signed-in');
+    }
+  }
+
+  function fmtDays(d) {
+    if (d === null) return '—';
+    if (d > 365 * 5) return '>5 yr';
+    return Math.round(d) + ' days';
+  }
+
+  function recalc() {
+    const tdeeLow = parseFloat($('#calc-tdee-low').value);
+    const tdeeHigh = parseFloat($('#calc-tdee-high').value);
+    const intake = parseFloat($('#calc-intake').value);
+    const goal = parseFloat($('#calc-goal').value);
+
+    // "Days low" = slow scenario — uses the LOWER TDEE (smaller deficit).
+    // "Days high" = fast scenario — uses the HIGHER TDEE (larger deficit).
+    const daysSlow = Calc.daysToGoal(tdeeLow, intake, goal);
+    const daysFast = Calc.daysToGoal(tdeeHigh, intake, goal);
+
+    const slowEl = $('#calc-days-low');
+    const fastEl = $('#calc-days-high');
+    slowEl.classList.remove('warn');
+    fastEl.classList.remove('warn');
+
+    if (daysSlow === null) {
+      slowEl.textContent = 'no loss';
+      slowEl.classList.add('warn');
+    } else {
+      slowEl.textContent = fmtDays(daysSlow);
+    }
+    if (daysFast === null) {
+      fastEl.textContent = 'no loss';
+      fastEl.classList.add('warn');
+    } else {
+      fastEl.textContent = fmtDays(daysFast);
+    }
+
+    if (daysSlow !== null && daysFast !== null) {
+      const lowW = Math.round(daysFast / 7);
+      const highW = Math.round(daysSlow / 7);
+      $('#calc-weeks').textContent = `${lowW}–${highW} wk`;
+    } else {
+      $('#calc-weeks').textContent = '—';
+    }
+  }
+
+  function init() {
+    renderAuthState();
+    $('#auth-state').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+    ['calc-tdee-low','calc-tdee-high','calc-intake','calc-goal'].forEach(id => {
+      $('#' + id).addEventListener('input', recalc);
+    });
+    recalc();
+  }
+
+  return { init };
+})();
+
+document.addEventListener('DOMContentLoaded', UI.init);
+</script>
+
+</body>
+</html>

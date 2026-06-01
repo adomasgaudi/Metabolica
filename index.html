@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Trim — weight tracker</title>
+<meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* ============================================================
+     Shared styles — keep in sync with guide.html if not extracted
+     to a shared style.css. The two pages share the same shell.
+     ============================================================ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #fafafa; color: #111;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  body {
+    max-width: 480px; margin: 0 auto; min-height: 100vh;
+    display: flex; flex-direction: column;
+    background: #fff; box-shadow: 0 0 32px rgba(0,0,0,0.04);
+    position: relative;
+  }
+  button, a { font-family: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid #eee; background: #fff;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand .accent { color: #059669; }
+  .topbar-right { display: flex; align-items: center; gap: 4px; }
+  .auth-state {
+    font-size: 12px; color: #666; padding: 6px 10px;
+    border-radius: 6px; cursor: pointer; transition: background 0.15s;
+  }
+  .auth-state:hover { background: #f4f4f4; }
+  .auth-state.signed-in { color: #059669; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    width: 38px; height: 38px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px; color: #555;
+    transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover { background: #f4f4f4; color: #111; }
+  .icon-btn svg { width: 20px; height: 20px; stroke-width: 1.8; }
+
+  /* CONTENT */
+  .content { flex: 1; padding-bottom: 96px; }
+  .view { display: none; padding: 24px 20px 12px; }
+  .view.active { display: block; }
+  .view h2 {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #888; margin-bottom: 14px;
+  }
+
+  /* CHART */
+  .stat-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; margin-bottom: 28px;
+  }
+  .stat-card {
+    padding: 14px 10px; background: #fafafa;
+    border: 1px solid #eee; border-radius: 10px; text-align: center;
+  }
+  .stat-card .label {
+    font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #888; margin-bottom: 6px; font-weight: 500;
+  }
+  .stat-card .value {
+    font-size: 20px; font-weight: 700; color: #111; letter-spacing: -0.01em;
+  }
+  .stat-card .value.up { color: #dc2626; }
+  .stat-card .value.down { color: #059669; }
+  .stat-card .unit {
+    font-size: 11px; color: #888; font-weight: 500; margin-left: 2px;
+  }
+  .chart-container { position: relative; height: 280px; margin-bottom: 16px; }
+
+  /* LOGS */
+  .log-list {
+    list-style: none; border: 1px solid #eee; border-radius: 10px;
+    overflow: hidden; background: #fff;
+  }
+  .log-entry {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center; gap: 14px;
+    padding: 14px 16px; border-bottom: 1px solid #f0f0f0;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .log-entry .date-block .date { font-size: 13.5px; color: #444; font-weight: 500; }
+  .log-entry .date-block .notes {
+    font-size: 11.5px; color: #999; margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;
+  }
+  .log-entry .weight { font-size: 15.5px; font-weight: 600; color: #111; }
+  .log-entry .delete {
+    background: none; border: none; cursor: pointer;
+    color: #bbb; font-size: 18px; padding: 4px 8px; border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .log-entry .delete:hover { color: #dc2626; background: #fef2f2; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    max-width: 480px; margin: 0 auto; background: #fff;
+    border-top: 1px solid #eee; padding: 6px 14px 10px;
+    display: grid; grid-template-columns: 1fr 1fr 84px 1fr 1fr;
+    gap: 4px; align-items: center; z-index: 100;
+  }
+  .nav-btn {
+    background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px;
+    padding: 8px 0 4px; color: #999; font-size: 10.5px; font-weight: 500;
+    transition: color 0.15s;
+  }
+  .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.7; }
+  .nav-btn.active { color: #059669; }
+  .nav-btn:hover { color: #555; }
+  .nav-btn.active:hover { color: #059669; }
+  .add-btn-wrap { display: flex; justify-content: center; }
+  .add-btn {
+    background: #059669; color: #fff; border: none;
+    width: 60px; height: 60px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: -30px; box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .add-btn:hover {
+    background: #047857; transform: scale(1.05);
+    box-shadow: 0 8px 22px rgba(5, 150, 105, 0.45);
+  }
+  .add-btn:active { transform: scale(0.98); }
+  .add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.6; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 60px 20px; color: #999; }
+  .empty .empty-icon { width: 56px; height: 56px; margin: 0 auto 16px; color: #ccc; }
+  .empty p { margin-bottom: 6px; font-size: 14px; }
+  .empty .empty-hint { font-size: 12.5px; color: #aaa; }
+
+  /* MODAL */
+  .modal {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.42);
+    display: none; align-items: flex-end; justify-content: center;
+    z-index: 200; animation: fadeIn 0.15s ease;
+  }
+  .modal.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-content {
+    background: #fff; width: 100%; max-width: 480px;
+    border-radius: 18px 18px 0 0; padding: 22px 22px 32px;
+    max-height: 88vh; overflow-y: auto;
+    animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); } to { transform: translateY(0); } }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .modal-header h2 {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: #111;
+  }
+  .modal-close {
+    background: none; border: none; font-size: 22px;
+    cursor: pointer; color: #888; padding: 4px 10px; line-height: 1;
+  }
+  .modal-close:hover { color: #111; }
+
+  /* FORM */
+  .form-row { margin-bottom: 14px; }
+  .form-row.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row label {
+    display: block; font-size: 12px; font-weight: 600; color: #555;
+    margin-bottom: 6px; letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; padding: 11px 13px; border: 1px solid #ddd;
+    border-radius: 7px; font-size: 15px; font-family: inherit;
+    background: #fff; color: #111;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .form-row textarea { resize: vertical; min-height: 56px; }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    outline: none; border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+  }
+  .form-help {
+    font-size: 11.5px; color: #888; margin-top: 4px; line-height: 1.4;
+  }
+  .btn-primary {
+    background: #059669; color: #fff; border: none;
+    width: 100%; padding: 13px; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s; margin-top: 6px;
+  }
+  .btn-primary:hover { background: #047857; }
+  .btn-secondary {
+    background: #f4f4f4; color: #555; border: none;
+    width: 100%; padding: 11px; border-radius: 8px;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s; margin-top: 8px;
+  }
+  .btn-secondary:hover { background: #ebebeb; }
+
+  /* USER PICKER (replaces sign-in) */
+  .picker-hint {
+    font-size: 13px; color: #555; margin-bottom: 16px; line-height: 1.55;
+  }
+  .user-picker {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px;
+  }
+  .picker-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px; border: 1px solid #e5e5e5; border-radius: 12px;
+    background: #fff; cursor: pointer; text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .picker-btn:hover { border-color: #059669; background: #f0fdf4; }
+  .picker-btn.active { border-color: #059669; background: #f0fdf4; }
+  .picker-btn.admin { grid-column: 1 / -1; }
+  .picker-btn .pk-avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #d1fae5; color: #059669; font-weight: 700; font-size: 16px;
+  }
+  .picker-btn.admin .pk-avatar { background: #fef3c7; color: #b45309; }
+  .picker-btn .pk-name { font-size: 14.5px; font-weight: 600; color: #111; }
+  .picker-btn .pk-role {
+    font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  /* ADMIN: topbar icon shown only when signed in as admin */
+  .admin-only { display: none !important; }
+  body.is-admin .admin-only { display: inline-flex !important; }
+  .icon-btn.admin-only { color: #059669; }
+
+  /* ADMIN: users view */
+  .admin-toolbar {
+    display: flex; gap: 8px; margin-bottom: 18px;
+  }
+  .admin-toolbar .btn-tool {
+    flex: 1; background: #059669; color: #fff; border: none;
+    padding: 11px; border-radius: 8px;
+    font-size: 13.5px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .admin-toolbar .btn-tool.ghost {
+    background: #f4f4f4; color: #555;
+  }
+  .admin-toolbar .btn-tool:hover { background: #047857; }
+  .admin-toolbar .btn-tool.ghost:hover { background: #ebebeb; }
+
+  .user-card {
+    display: grid; grid-template-columns: 1fr auto auto;
+    align-items: center; gap: 12px;
+    padding: 14px 16px; border: 1px solid #eee;
+    border-radius: 10px; margin-bottom: 10px;
+    background: #fff; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .user-card:hover { border-color: #059669; background: #f0fdf4; }
+  .user-card .uc-email {
+    font-size: 14px; font-weight: 600; color: #111;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .user-card .uc-meta {
+    font-size: 11.5px; color: #888; margin-top: 2px;
+  }
+  .user-card .uc-count {
+    font-size: 13px; font-weight: 600; color: #059669;
+    background: #d1fae5; padding: 4px 9px; border-radius: 999px;
+  }
+  .user-card .uc-delete {
+    background: none; border: none; cursor: pointer;
+    color: #bbb; font-size: 18px; padding: 4px 8px; border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .user-card .uc-delete:hover { color: #dc2626; background: #fef2f2; }
+
+  /* ADMIN: viewer modal (chart + log inside the modal) */
+  .modal-content.wide { max-height: 92vh; }
+  .viewer-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; margin-bottom: 14px;
+  }
+  .viewer-stats .stat-card { padding: 10px 6px; }
+  .viewer-stats .stat-card .value { font-size: 17px; }
+  .viewer-chart { position: relative; height: 220px; margin-bottom: 14px; }
+  .viewer-log {
+    list-style: none; border: 1px solid #eee; border-radius: 10px;
+    overflow: hidden; max-height: 240px; overflow-y: auto;
+  }
+  .viewer-log .log-entry { padding: 11px 14px; }
+  .viewer-log .log-entry .delete { display: none; }
+
+  .file-input { display: none; }
+
+  .section-divider {
+    border: none; border-top: 1px solid #eee;
+    margin: 22px 0 14px;
+  }
+  .section-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #888; margin-bottom: 10px;
+  }
+
+  /* DIET LOG */
+  .meal-card {
+    border: 1px solid #eee; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 12px; background: #fff;
+  }
+  .meal-card .meal-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .meal-card .meal-date { font-size: 12.5px; color: #888; font-weight: 500; }
+  .meal-card .meal-delete {
+    background: none; border: none; cursor: pointer;
+    color: #bbb; font-size: 18px; padding: 0 4px; border-radius: 4px;
+  }
+  .meal-card .meal-delete:hover { color: #dc2626; }
+  .meal-card .meal-desc {
+    font-size: 14px; color: #222; line-height: 1.5;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .meal-card .meal-photos {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; margin-top: 10px;
+  }
+  .meal-card .meal-photos img {
+    width: 100%; aspect-ratio: 1; object-fit: cover;
+    border-radius: 8px; cursor: pointer; background: #f0f0f0;
+  }
+  .photo-thumbs {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 6px; margin-top: 8px;
+  }
+  .photo-thumbs .thumb {
+    position: relative; aspect-ratio: 1; border-radius: 8px;
+    background: #f0f0f0; overflow: hidden;
+  }
+  .photo-thumbs .thumb img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .photo-thumbs .thumb .remove {
+    position: absolute; top: 4px; right: 4px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(0,0,0,0.6); color: #fff; border: none;
+    font-size: 14px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .photo-thumbs .thumb .remove:hover { background: rgba(220, 38, 38, 0.9); }
+  .add-photo-btn {
+    background: #f4f4f4; color: #555; border: 1px dashed #bbb;
+    padding: 10px; border-radius: 7px; cursor: pointer;
+    width: 100%; font-size: 13px; font-weight: 500; margin-top: 8px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .add-photo-btn:hover { background: #ebebeb; border-color: #888; }
+
+  /* Lightbox for full-size photo */
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+    display: none; align-items: center; justify-content: center;
+    z-index: 500; cursor: zoom-out; padding: 20px;
+  }
+  .lightbox.active { display: flex; }
+  .lightbox img {
+    max-width: 100%; max-height: 100%; object-fit: contain;
+    border-radius: 6px;
+  }
+
+  /* Admin paste-data textarea */
+  .paste-area {
+    width: 100%; min-height: 160px; padding: 10px 12px;
+    border: 1px solid #ddd; border-radius: 7px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px; line-height: 1.4; resize: vertical;
+  }
+
+  /* Checklist progress display in viewer */
+  .checklist-progress {
+    background: #f9fafb; border: 1px solid #eee; border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 14px;
+  }
+  .checklist-progress .cp-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #888; margin-bottom: 4px;
+  }
+  .checklist-progress .cp-value {
+    font-size: 16px; font-weight: 700; color: #111;
+  }
+
+  /* FACTS PANEL */
+  .facts {
+    margin-top: 22px; padding: 18px;
+    background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 10px; display: none;
+  }
+  .facts.visible { display: block; }
+  .facts h3 {
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #15803d; margin-bottom: 14px;
+  }
+  .fact {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 14px; padding: 7px 0; border-bottom: 1px solid #d1fae5;
+  }
+  .fact:last-child { border-bottom: none; }
+  .fact .fact-label { color: #555; }
+  .fact .fact-value { font-weight: 600; color: #111; }
+  .fact .fact-unit {
+    color: #888; font-weight: 500; font-size: 12.5px; margin-left: 3px;
+  }
+  .fact-note {
+    margin-top: 12px; font-size: 11.5px; color: #555; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- TOP BAR -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<header class="topbar">
+  <div class="brand"><span class="accent">●</span> Trim</div>
+  <div class="topbar-right">
+    <span id="auth-state" class="auth-state">Sign in</span>
+    <button id="admin-btn" class="icon-btn admin-only" aria-label="Admin — manage users">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </button>
+    <button id="profile-btn" class="icon-btn" aria-label="Profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MAIN CONTENT -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<main class="content">
+
+  <section id="view-chart" class="view active">
+    <h2>Your weight</h2>
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="label">Current</div>
+        <div><span id="stat-current" class="value">—</span><span class="unit">kg</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Change</div>
+        <div><span id="stat-change" class="value">—</span><span class="unit">kg</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Entries</div>
+        <div><span id="stat-days" class="value">—</span></div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="weightChart"></canvas>
+    </div>
+    <div class="empty" id="chart-empty">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
+      <p>No weight entries yet.</p>
+      <p class="empty-hint">Tap the + button to add your first one.</p>
+    </div>
+  </section>
+
+  <section id="view-logs" class="view">
+    <h2>Weight log</h2>
+    <ul class="log-list" id="log-list"></ul>
+    <div class="empty" id="logs-empty">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
+      <p>No entries yet.</p>
+      <p class="empty-hint">Tap the + button to add one.</p>
+    </div>
+  </section>
+
+  <section id="view-diet" class="view">
+    <h2>Diet log</h2>
+    <button id="meal-add-btn" class="btn-primary" style="margin-bottom: 16px;">+ Log a meal</button>
+    <div id="meal-list"></div>
+    <div class="empty" id="meal-empty">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      <p>No meals logged yet.</p>
+      <p class="empty-hint">Tap "Log a meal" to add a description and photos.</p>
+    </div>
+  </section>
+
+  <section id="view-users" class="view">
+    <h2>Users — admin</h2>
+    <div class="admin-toolbar">
+      <button class="btn-tool" id="admin-import-btn">Import .json</button>
+      <button class="btn-tool ghost" id="admin-paste-btn">Paste data</button>
+    </div>
+    <input type="file" id="admin-file-input" class="file-input" accept=".json,application/json" multiple>
+    <div id="user-list"></div>
+    <div class="empty" id="users-empty">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <p>No users imported yet.</p>
+      <p class="empty-hint">Tap Import to load a user's exported .json file.</p>
+    </div>
+  </section>
+
+</main>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- BOTTOM NAV -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-view="chart">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
+    <span>Chart</span>
+  </button>
+  <button class="nav-btn" data-view="logs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
+    <span>Logs</span>
+  </button>
+  <div class="add-btn-wrap">
+    <button class="add-btn" id="add-btn" aria-label="Add weight">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+  <button class="nav-btn" data-view="diet">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+    <span>Diet</span>
+  </button>
+  <a class="nav-btn" href="guide.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v15a2 2 0 0 0 2 2h13"/><path d="M4 4h13a2 2 0 0 1 2 2v13H6a2 2 0 0 0-2 2"/></svg>
+    <span>Guide</span>
+  </a>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MODAL: ADD WEIGHT -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<div class="modal" id="modal-add">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add weight</h2>
+      <button class="modal-close">×</button>
+    </div>
+    <form id="form-add">
+      <div class="form-row two">
+        <div>
+          <label for="add-weight">Weight (kg)</label>
+          <input type="number" id="add-weight" step="0.1" min="0" max="500" required autocomplete="off">
+        </div>
+        <div>
+          <label for="add-clothes">Clothes (kg)</label>
+          <input type="number" id="add-clothes" step="0.01" min="0" max="5" placeholder="0" autocomplete="off">
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="add-date">Date & time</label>
+        <input type="datetime-local" id="add-date" required>
+      </div>
+      <div class="form-row">
+        <label for="add-notes">Notes (optional)</label>
+        <textarea id="add-notes" placeholder="e.g. morning, after toilet, with clothes"></textarea>
+        <div class="form-help">Track context that explains the number — before/after toilet, with clothes, hours after waking.</div>
+      </div>
+      <button type="submit" class="btn-primary">Save entry</button>
+    </form>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MODAL: PROFILE -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<div class="modal" id="modal-profile">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Your profile</h2>
+      <button class="modal-close">×</button>
+    </div>
+    <form id="form-profile">
+      <div class="form-row two">
+        <div>
+          <label for="prof-sex">Sex</label>
+          <select id="prof-sex" required>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div>
+          <label for="prof-age">Age</label>
+          <input type="number" id="prof-age" min="14" max="100" required>
+        </div>
+      </div>
+      <div class="form-row two">
+        <div>
+          <label for="prof-height">Height (cm)</label>
+          <input type="number" id="prof-height" min="120" max="230" required>
+        </div>
+        <div>
+          <label for="prof-weight">Current weight (kg)</label>
+          <input type="number" id="prof-weight" step="0.1" min="30" max="300" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="prof-activity">Activity level</label>
+        <select id="prof-activity" required>
+          <option value="sedentary">Sedentary — desk job, little exercise</option>
+          <option value="light">Light — 1–3 days/week light exercise</option>
+          <option value="moderate" selected>Moderate — 3–5 days/week</option>
+          <option value="active">Active — 6–7 days/week</option>
+          <option value="very_active">Very active — physical job + training</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary">Save & calculate</button>
+    </form>
+
+    <hr class="section-divider">
+    <div class="section-label">Export your data</div>
+    <p style="font-size: 12.5px; color: #666; margin-bottom: 10px; line-height: 1.5;">
+      Download your profile and weight log as a single <code>.json</code> file. Send it to your admin and they can view your graph.
+    </p>
+    <button id="export-btn" type="button" class="btn-secondary">Download my data (.json)</button>
+
+    <div class="facts" id="facts-panel">
+      <h3>Your numbers</h3>
+      <div class="fact"><span class="fact-label">BMR (resting burn)</span><span><span id="fact-bmr" class="fact-value">—</span><span class="fact-unit">kcal/day</span></span></div>
+      <div class="fact"><span class="fact-label">TDEE (with activity)</span><span><span id="fact-tdee" class="fact-value">—</span><span class="fact-unit">kcal/day</span></span></div>
+      <div class="fact"><span class="fact-label">PSMF protein target</span><span><span id="fact-protein" class="fact-value">—</span><span class="fact-unit">g/day</span></span></div>
+      <div class="fact"><span class="fact-label">PSMF calorie target</span><span><span id="fact-calories" class="fact-value">—</span><span class="fact-unit">kcal/day</span></span></div>
+      <div class="fact"><span class="fact-label">Water target</span><span><span id="fact-water" class="fact-value">—</span><span class="fact-unit">L/day</span></span></div>
+      <div class="fact"><span class="fact-label">Sodium target</span><span><span class="fact-value">3–5</span><span class="fact-unit">g/day</span></span></div>
+      <div class="fact"><span class="fact-label">Potassium target</span><span><span class="fact-value">1–3</span><span class="fact-unit">g/day</span></span></div>
+      <div class="fact"><span class="fact-label">Magnesium target</span><span><span class="fact-value">300–400</span><span class="fact-unit">mg/day</span></span></div>
+      <p class="fact-note">Estimates from Mifflin-St Jeor (BMR) and the standard PSMF guidelines. Confirm with a doctor before starting.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MODAL: PICK USER (no password — test build) -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<div class="modal" id="modal-auth">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="auth-title">Who's this?</h2>
+      <button class="modal-close">×</button>
+    </div>
+    <p class="picker-hint">
+      Tap a profile to view and log their data. No password — admin/user
+      privileges aren't separated yet.
+    </p>
+    <div class="user-picker" id="user-picker"></div>
+    <button id="auth-logout-btn" class="btn-secondary" style="display: none;">Clear selection</button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MODAL: ADD MEAL -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<div class="modal" id="modal-meal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Log a meal</h2>
+      <button class="modal-close">×</button>
+    </div>
+    <form id="form-meal">
+      <div class="form-row">
+        <label for="meal-date">Date & time</label>
+        <input type="datetime-local" id="meal-date" required>
+      </div>
+      <div class="form-row">
+        <label for="meal-desc">What did you eat?</label>
+        <textarea id="meal-desc" rows="3" placeholder="e.g. 200g grilled chicken, salad, black coffee" required></textarea>
+      </div>
+      <div class="form-row">
+        <label>Photos (optional)</label>
+        <input type="file" id="meal-photos" class="file-input" accept="image/*" multiple>
+        <button type="button" class="add-photo-btn" id="meal-photo-pick">+ Add photo</button>
+        <div class="photo-thumbs" id="meal-thumbs"></div>
+        <div class="form-help" id="meal-photo-help">Photos are shrunk to ~800px and JPEG-compressed before saving. Hold to delete a thumb.</div>
+      </div>
+      <button type="submit" class="btn-primary">Save meal</button>
+    </form>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MODAL: ADMIN — VIEW A USER -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<div class="modal" id="modal-viewer">
+  <div class="modal-content wide">
+    <div class="modal-header">
+      <h2 id="viewer-title">User</h2>
+      <button class="modal-close">×</button>
+    </div>
+    <div id="viewer-meta" style="font-size: 12px; color: #888; margin-bottom: 14px;"></div>
+
+    <div class="viewer-stats stat-cards">
+      <div class="stat-card"><div class="label">Current</div><div><span id="v-current" class="value">—</span><span class="unit">kg</span></div></div>
+      <div class="stat-card"><div class="label">Change</div><div><span id="v-change" class="value">—</span><span class="unit">kg</span></div></div>
+      <div class="stat-card"><div class="label">Entries</div><div><span id="v-days" class="value">—</span></div></div>
+    </div>
+
+    <div class="checklist-progress" id="v-checklist" style="display: none;">
+      <div class="cp-label">Checklist progress</div>
+      <div class="cp-value"><span id="v-checklist-val">—</span> items ticked</div>
+    </div>
+
+    <div class="viewer-chart"><canvas id="v-chart"></canvas></div>
+
+    <div class="section-label">Weight log</div>
+    <ul class="log-list viewer-log" id="v-loglist"></ul>
+
+    <div class="section-label" id="v-diet-label" style="margin-top: 18px;">Diet log</div>
+    <div id="v-meals"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MODAL: ADMIN — PASTE DATA -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<div class="modal" id="modal-paste">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Paste user data</h2>
+      <button class="modal-close">×</button>
+    </div>
+    <p style="font-size: 12.5px; color: #666; margin-bottom: 10px; line-height: 1.5;">
+      Paste the contents of a Trim export <code>.json</code> file. For huge files (lots of photos) use the Import button instead.
+    </p>
+    <textarea id="paste-textarea" class="paste-area" placeholder='{ "trim_export": 2, ... }'></textarea>
+    <button id="paste-confirm" class="btn-primary" type="button">Import</button>
+  </div>
+</div>
+
+
+<!-- Lightbox for full-size photo -->
+<div class="lightbox" id="lightbox"><img id="lightbox-img" alt=""></div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SCRIPT -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<script>
+/* ============================================================
+   Trim — tracker page
+   ============================================================
+
+   Modules (in order):
+   - Store     : localStorage (small data: log, profile, auth, checklist)
+   - IDB       : IndexedDB wrapper (large data: meals with photos, admin imports)
+   - ImageUtil : downsize + JPEG-compress photos before saving
+   - Meals     : user's own diet log (uses IDB)
+   - Imports   : admin's collected user payloads (uses IDB)
+   - Calc      : pure calculations (BMR, TDEE, PSMF targets)
+   - Auth      : sign-in stub + isAdmin gate
+   - Exporter  : assembles one JSON payload (all user data) + downloads as .json
+   - Importer  : validates an inbound JSON payload
+   - UI        : views, modals, event wiring
+
+   Entry shape (weight): { id, weight, date, notes, clothesWeight }
+   Meal shape:           { id, date, description, photos: [dataURL...] }
+   Profile shape:        { sex, height, age, weight, activity }
+
+   Export payload v2:
+     { trim_export: 2, exported_at, user: { email }, profile,
+       log: [...], checklist: {key: bool}, meals: [...] }
+   ============================================================ */
+
+/* ============================================================
+   USER ROSTER — single source of truth for who can use the app.
+   No passwords yet: this is a test build, you just tap a profile.
+   `role` is where admin/user privilege separation will hook in
+   later — gate features on Auth.isAdmin() (role === 'admin').
+   Each user gets their own isolated data (weight log, profile,
+   checklist, meals) keyed by `id`.
+   ============================================================ */
+const USERS = [
+  { id: 'adomas',  name: 'Adomas',  role: 'user'  },
+  { id: 'andrius', name: 'Andrius', role: 'user'  },
+  { id: 'mantas',  name: 'Mantas',  role: 'user'  },
+  { id: 'simona',  name: 'Simona',  role: 'user'  },
+  { id: 'admin',   name: 'Admin',   role: 'admin' },
+];
+const USER_BY_ID = Object.fromEntries(USERS.map(u => [u.id, u]));
+// Derive a stable export email/key for a user record.
+const userEmail = u => `${u.id}@trim.local`;
+
+const EXPORT_VERSION = 2;
+const DB_NAME = 'trim_db_v1';
+
+const Store = (() => {
+  const K = {
+    ACTIVE: 'trim.activeUser.v1',  // global: which user is selected
+    LOG: 'trim.log.v1',
+    PROFILE: 'trim.profile.v1',
+    CHECKLIST: 'trim.checklist.v1',
+  };
+  const read = (key, fallback) => {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return v === null ? fallback : v;
+    } catch { return fallback; }
+  };
+  const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+
+  // Per-user namespaced key — data for each user is kept separate.
+  function activeId() {
+    try { return localStorage.getItem(K.ACTIVE) || null; } catch { return null; }
+  }
+  const uk = base => `${base}::${activeId()}`;
+
+  return {
+    // ---- active user (the tapped profile) ----
+    getActiveUser() {
+      const id = activeId();
+      return id ? (USER_BY_ID[id] || null) : null;
+    },
+    setActiveUser(id) {
+      if (id && USER_BY_ID[id]) localStorage.setItem(K.ACTIVE, id);
+      else localStorage.removeItem(K.ACTIVE);
+    },
+
+    // ---- per-user data ----
+    getLog() { return read(uk(K.LOG), []); },
+    saveLog(log) { write(uk(K.LOG), log); },
+    addEntry(entry) {
+      const log = this.getLog();
+      log.push({ id: Date.now().toString(), ...entry });
+      this.saveLog(log);
+    },
+    deleteEntry(id) {
+      this.saveLog(this.getLog().filter(e => e.id !== id));
+    },
+    getProfile() { return read(uk(K.PROFILE), null); },
+    saveProfile(p) { write(uk(K.PROFILE), p); },
+    getChecklist() { return read(uk(K.CHECKLIST), {}); },
+  };
+})();
+
+/* ============================================================
+   IndexedDB wrapper — async key-value-ish access for large data
+   ============================================================ */
+const IDB = (() => {
+  let dbPromise = null;
+  function open() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('meals')) db.createObjectStore('meals', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('imports')) db.createObjectStore('imports', { keyPath: 'id' });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return dbPromise;
+  }
+  const p = req => new Promise((ok, no) => { req.onsuccess = () => ok(req.result); req.onerror = () => no(req.error); });
+  async function store(name, mode = 'readonly') {
+    const db = await open();
+    return db.transaction(name, mode).objectStore(name);
+  }
+  return {
+    async all(name)         { return p((await store(name)).getAll()); },
+    async get(name, k)      { return p((await store(name)).get(k)); },
+    async put(name, v)      { return p((await store(name, 'readwrite')).put(v)); },
+    async del(name, k)      { return p((await store(name, 'readwrite')).delete(k)); },
+  };
+})();
+
+/* ============================================================
+   ImageUtil — downscale + JPEG-compress so 30 days of photos fit
+   ============================================================ */
+const ImageUtil = (() => {
+  const MAX_DIM = 1024;
+  const QUALITY = 0.72;
+  return {
+    async compress(file) {
+      const dataUrl = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = () => rej(r.error);
+        r.readAsDataURL(file);
+      });
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error('image load failed'));
+        i.src = dataUrl;
+      });
+      const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', QUALITY);
+    },
+  };
+})();
+
+/* ============================================================
+   Meals — user's own diet log (IndexedDB)
+   ============================================================ */
+const Meals = {
+  async list() {
+    const uid = Store.getActiveUser()?.id || null;
+    const all = await IDB.all('meals');
+    return all
+      .filter(m => m.user === uid)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  },
+  async add(meal) {
+    const uid = Store.getActiveUser()?.id || null;
+    return IDB.put('meals', { id: Date.now().toString(), user: uid, ...meal });
+  },
+  async remove(id) { return IDB.del('meals', id); },
+};
+
+/* ============================================================
+   Imports — admin's collected user payloads (IndexedDB)
+   Keyed by lowercased email so latest snapshot overwrites old.
+   ============================================================ */
+const Imports = {
+  async list() {
+    const all = await IDB.all('imports');
+    return all.sort((a, b) => new Date(b.importedAt) - new Date(a.importedAt));
+  },
+  async get(id) { return IDB.get('imports', id); },
+  async save(payload) {
+    const email = (payload.user && payload.user.email) || 'unknown';
+    const record = {
+      id: email.toLowerCase(),
+      email,
+      exportedAt: payload.exported_at || null,
+      importedAt: new Date().toISOString(),
+      profile: payload.profile || null,
+      log: Array.isArray(payload.log) ? payload.log : [],
+      checklist: payload.checklist || {},
+      meals: Array.isArray(payload.meals) ? payload.meals : [],
+    };
+    await IDB.put('imports', record);
+    return record;
+  },
+  async remove(id) { return IDB.del('imports', id); },
+};
+
+const Calc = (() => {
+  const ACTIVITY = {
+    sedentary: 1.2, light: 1.375, moderate: 1.55,
+    active: 1.725, very_active: 1.9,
+  };
+  return {
+    bmr(p) {
+      const base = 10 * p.weight + 6.25 * p.height - 5 * p.age;
+      return p.sex === 'male' ? base + 5 : base - 161;
+    },
+    tdee(p) { return this.bmr(p) * ACTIVITY[p.activity]; },
+    proteinTarget(p) { return p.weight * 1.5; },
+    calorieTarget(p) { return this.proteinTarget(p) * 4 + 100; },
+    waterTarget_ml(p) { return p.weight * 35; },
+  };
+})();
+
+const Auth = (() => {
+  return {
+    isLoggedIn() { return Store.getActiveUser() !== null; },
+    // Privilege gate — extend this when splitting admin/user features.
+    isAdmin() {
+      const u = Store.getActiveUser();
+      return !!(u && u.role === 'admin');
+    },
+    user() { return Store.getActiveUser(); },
+    // Tap-to-select a profile (no password — test build).
+    select(id) { Store.setActiveUser(id); return Store.getActiveUser(); },
+    logout() { Store.setActiveUser(null); },
+  };
+})();
+
+/* ============================================================
+   Exporter — bundle everything into one downloadable .json
+   ============================================================ */
+const Exporter = {
+  async buildPayload() {
+    const u = Store.getActiveUser();
+    const email = u ? userEmail(u) : 'anonymous';
+    return {
+      trim_export: EXPORT_VERSION,
+      exported_at: new Date().toISOString(),
+      user: { id: u ? u.id : null, name: u ? u.name : 'Anonymous', email },
+      profile: Store.getProfile(),
+      log: Store.getLog(),
+      checklist: Store.getChecklist(),
+      meals: await Meals.list(),
+    };
+  },
+  async downloadFile() {
+    const payload = await this.buildPayload();
+    const json = JSON.stringify(payload);
+    const safeEmail = payload.user.email.replace(/[^a-z0-9._-]+/gi, '_');
+    const stamp = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `trim-${safeEmail}-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return { fileName: a.download, bytes: blob.size };
+  },
+};
+
+/* ============================================================
+   Importer — validate a payload before storing
+   ============================================================ */
+const Importer = {
+  parse(text) {
+    let obj;
+    try { obj = JSON.parse(text); }
+    catch { return { ok: false, error: 'Not valid JSON.' }; }
+    if (!obj || typeof obj !== 'object') return { ok: false, error: 'Payload is not an object.' };
+    if (!obj.trim_export) return { ok: false, error: 'Missing trim_export marker — wrong file?' };
+    if (!obj.user || !obj.user.email) return { ok: false, error: 'Missing user.email.' };
+    return { ok: true, payload: obj };
+  },
+  async readFile(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = () => rej(r.error);
+      r.readAsText(file);
+    });
+  },
+};
+
+const Fmt = {
+  date(d) {
+    return new Date(d).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+    });
+  },
+  dateTime(d) {
+    return new Date(d).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+  },
+  shortDate(d) {
+    const dt = new Date(d);
+    return `${dt.getMonth() + 1}/${dt.getDate()}`;
+  },
+};
+
+const UI = (() => {
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => document.querySelectorAll(sel);
+  let chart = null;
+  let viewerChart = null;
+  let pendingMealPhotos = [];  // dataURLs queued in the add-meal modal
+
+  function setView(name) {
+    $$('.view').forEach(v => v.classList.remove('active'));
+    $$('.nav-btn[data-view]').forEach(b => b.classList.remove('active'));
+    $(`#view-${name}`)?.classList.add('active');
+    document.querySelector(`.nav-btn[data-view="${name}"]`)?.classList.add('active');
+    if (name === 'chart') renderChart();
+    if (name === 'logs') renderLogs();
+    if (name === 'diet') renderMeals();
+    if (name === 'users') renderUsers();
+  }
+
+  function renderChart() {
+    const log = Store.getLog();
+    const sorted = [...log].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const empty = $('#chart-empty');
+    const container = $('.chart-container');
+    const cards = $('.stat-cards');
+
+    if (sorted.length === 0) {
+      empty.style.display = 'block';
+      container.style.display = 'none';
+      cards.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    container.style.display = 'block';
+    cards.style.display = 'grid';
+
+    const current = sorted[sorted.length - 1].weight;
+    const first = sorted[0].weight;
+    const change = current - first;
+    const changeStr = (change >= 0 ? '+' : '') + change.toFixed(1);
+
+    $('#stat-current').textContent = current.toFixed(1);
+    const changeEl = $('#stat-change');
+    changeEl.textContent = changeStr;
+    changeEl.classList.remove('up', 'down');
+    if (change > 0) changeEl.classList.add('up');
+    if (change < 0) changeEl.classList.add('down');
+    $('#stat-days').textContent = sorted.length;
+
+    const ctx = $('#weightChart');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: sorted.map(e => Fmt.shortDate(e.date)),
+        datasets: [{
+          data: sorted.map(e => e.weight),
+          borderColor: '#059669',
+          backgroundColor: 'rgba(5, 150, 105, 0.08)',
+          borderWidth: 2.5, tension: 0.32, fill: true,
+          pointRadius: 3.5, pointBackgroundColor: '#059669',
+          pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111', padding: 10, displayColors: false,
+            callbacks: { label: c => c.parsed.y.toFixed(1) + ' kg' },
+          },
+        },
+        scales: {
+          y: { beginAtZero: false, grid: { color: '#f0f0f0' }, ticks: { color: '#888', font: { size: 11 } } },
+          x: { grid: { display: false }, ticks: { color: '#888', font: { size: 11 } } },
+        },
+      },
+    });
+  }
+
+  function renderLogs() {
+    const log = Store.getLog();
+    const list = $('#log-list');
+    const empty = $('#logs-empty');
+    list.innerHTML = '';
+    if (log.length === 0) {
+      list.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    list.style.display = 'block';
+    empty.style.display = 'none';
+    const sorted = [...log].sort((a, b) => new Date(b.date) - new Date(a.date));
+    sorted.forEach(entry => {
+      const li = document.createElement('li');
+      li.className = 'log-entry';
+      const clothesPart = entry.clothesWeight ? ` · clothes ${entry.clothesWeight}kg` : '';
+      const notesText = (entry.notes || '') + clothesPart;
+      li.innerHTML = `
+        <div class="date-block">
+          <div class="date">${Fmt.dateTime(entry.date)}</div>
+          ${notesText ? `<div class="notes">${escapeHTML(notesText)}</div>` : ''}
+        </div>
+        <span class="weight">${entry.weight.toFixed(1)} kg</span>
+        <button class="delete" data-id="${entry.id}" aria-label="Delete">×</button>
+      `;
+      list.appendChild(li);
+    });
+    list.querySelectorAll('.delete').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const id = e.currentTarget.dataset.id;
+        Store.deleteEntry(id);
+        renderLogs();
+      });
+    });
+  }
+
+  /* ---- Diet log (user's own) ---- */
+  async function renderMeals() {
+    const meals = await Meals.list();
+    const list = $('#meal-list');
+    const empty = $('#meal-empty');
+    list.innerHTML = '';
+    if (meals.length === 0) {
+      list.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    list.style.display = 'block';
+    empty.style.display = 'none';
+    meals.forEach(m => list.appendChild(buildMealCard(m, true)));
+    list.querySelectorAll('.meal-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this meal?')) return;
+        await Meals.remove(btn.dataset.id);
+        renderMeals();
+      });
+    });
+    wireLightboxThumbs(list);
+  }
+
+  function buildMealCard(m, withDelete) {
+    const li = document.createElement('div');
+    li.className = 'meal-card';
+    const photosHtml = (m.photos && m.photos.length)
+      ? `<div class="meal-photos">${m.photos.map((p, i) =>
+          `<img src="${p}" alt="meal photo ${i+1}" class="lb-thumb">`).join('')}</div>`
+      : '';
+    li.innerHTML = `
+      <div class="meal-head">
+        <span class="meal-date">${Fmt.dateTime(m.date)}</span>
+        ${withDelete ? `<button class="meal-delete" data-id="${m.id}" aria-label="Delete">×</button>` : ''}
+      </div>
+      <div class="meal-desc">${escapeHTML(m.description || '')}</div>
+      ${photosHtml}
+    `;
+    return li;
+  }
+
+  function wireLightboxThumbs(scope) {
+    scope.querySelectorAll('.lb-thumb').forEach(img => {
+      img.addEventListener('click', () => {
+        $('#lightbox-img').src = img.src;
+        $('#lightbox').classList.add('active');
+      });
+    });
+  }
+
+  function renderPendingPhotos() {
+    const wrap = $('#meal-thumbs');
+    wrap.innerHTML = pendingMealPhotos.map((dataUrl, i) => `
+      <div class="thumb">
+        <img src="${dataUrl}">
+        <button type="button" class="remove" data-i="${i}" aria-label="Remove">×</button>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('.remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pendingMealPhotos.splice(parseInt(btn.dataset.i, 10), 1);
+        renderPendingPhotos();
+      });
+    });
+  }
+
+  /* ---- Admin: users list + viewer ---- */
+  async function renderUsers() {
+    const users = await Imports.list();
+    const list = $('#user-list');
+    const empty = $('#users-empty');
+    list.innerHTML = '';
+    if (users.length === 0) {
+      list.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    list.style.display = 'block';
+    empty.style.display = 'none';
+    users.forEach(u => {
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      card.dataset.id = u.id;
+      const last = u.log.length
+        ? `${u.log[u.log.length - 1].weight.toFixed(1)} kg latest`
+        : 'no weights';
+      card.innerHTML = `
+        <div>
+          <div class="uc-email">${escapeHTML(u.email)}</div>
+          <div class="uc-meta">${last} · ${u.meals.length} meals · imported ${Fmt.date(u.importedAt)}</div>
+        </div>
+        <span class="uc-count">${u.log.length}</span>
+        <button class="uc-delete" data-id="${u.id}" aria-label="Delete">×</button>
+      `;
+      list.appendChild(card);
+    });
+    list.querySelectorAll('.user-card').forEach(card => {
+      card.addEventListener('click', e => {
+        if (e.target.closest('.uc-delete')) return;
+        openViewer(card.dataset.id);
+      });
+    });
+    list.querySelectorAll('.uc-delete').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!confirm('Remove this user from your library?')) return;
+        await Imports.remove(btn.dataset.id);
+        renderUsers();
+      });
+    });
+  }
+
+  async function openViewer(id) {
+    const u = await Imports.get(id);
+    if (!u) return;
+    $('#viewer-title').textContent = u.email;
+    const expStamp = u.exportedAt ? `exported ${Fmt.dateTime(u.exportedAt)}` : 'no export date';
+    $('#viewer-meta').textContent = `${expStamp} · imported ${Fmt.dateTime(u.importedAt)}`;
+
+    // Stats + chart
+    const sorted = [...u.log].sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (sorted.length > 0) {
+      const current = sorted[sorted.length - 1].weight;
+      const first = sorted[0].weight;
+      const change = current - first;
+      $('#v-current').textContent = current.toFixed(1);
+      const changeEl = $('#v-change');
+      changeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(1);
+      changeEl.classList.remove('up', 'down');
+      if (change > 0) changeEl.classList.add('up');
+      if (change < 0) changeEl.classList.add('down');
+      $('#v-days').textContent = sorted.length;
+    } else {
+      $('#v-current').textContent = '—';
+      $('#v-change').textContent = '—';
+      $('#v-days').textContent = '0';
+    }
+
+    if (viewerChart) { viewerChart.destroy(); viewerChart = null; }
+    // Chart needs to render after the canvas is laid out — defer until modal is open.
+    const renderViewerChart = () => {
+      if (sorted.length === 0) return;
+      viewerChart = new Chart($('#v-chart'), {
+        type: 'line',
+        data: {
+          labels: sorted.map(e => Fmt.shortDate(e.date)),
+          datasets: [{
+            data: sorted.map(e => e.weight),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.08)',
+            borderWidth: 2.5, tension: 0.32, fill: true,
+            pointRadius: 3, pointBackgroundColor: '#059669',
+            pointBorderColor: '#fff', pointBorderWidth: 2,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#111', padding: 10, displayColors: false,
+              callbacks: { label: c => c.parsed.y.toFixed(1) + ' kg' } },
+          },
+          scales: {
+            y: { beginAtZero: false, grid: { color: '#f0f0f0' }, ticks: { color: '#888', font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } },
+          },
+        },
+      });
+    };
+
+    // Checklist progress
+    const checked = Object.values(u.checklist || {}).filter(v => v).length;
+    const checklistEl = $('#v-checklist');
+    if (checked > 0 || Object.keys(u.checklist || {}).length > 0) {
+      checklistEl.style.display = 'block';
+      $('#v-checklist-val').textContent = checked;
+    } else {
+      checklistEl.style.display = 'none';
+    }
+
+    // Weight log
+    const ul = $('#v-loglist');
+    ul.innerHTML = '';
+    const logSorted = [...u.log].sort((a, b) => new Date(b.date) - new Date(a.date));
+    logSorted.forEach(entry => {
+      const li = document.createElement('li');
+      li.className = 'log-entry';
+      const clothesPart = entry.clothesWeight ? ` · clothes ${entry.clothesWeight}kg` : '';
+      const notesText = (entry.notes || '') + clothesPart;
+      li.innerHTML = `
+        <div class="date-block">
+          <div class="date">${Fmt.dateTime(entry.date)}</div>
+          ${notesText ? `<div class="notes">${escapeHTML(notesText)}</div>` : ''}
+        </div>
+        <span class="weight">${entry.weight.toFixed(1)} kg</span>
+        <button class="delete" aria-label="hidden">×</button>
+      `;
+      ul.appendChild(li);
+    });
+
+    // Diet log
+    const mealsWrap = $('#v-meals');
+    mealsWrap.innerHTML = '';
+    const dietLabel = $('#v-diet-label');
+    if (u.meals && u.meals.length > 0) {
+      dietLabel.textContent = `Diet log (${u.meals.length})`;
+      const sortedMeals = [...u.meals].sort((a, b) => new Date(b.date) - new Date(a.date));
+      sortedMeals.forEach(m => mealsWrap.appendChild(buildMealCard(m, false)));
+      wireLightboxThumbs(mealsWrap);
+    } else {
+      dietLabel.textContent = 'Diet log';
+      mealsWrap.innerHTML = '<p style="font-size: 12.5px; color: #999;">No meals logged.</p>';
+    }
+
+    openModal('modal-viewer');
+    requestAnimationFrame(renderViewerChart);
+  }
+
+  function renderFacts() {
+    const profile = Store.getProfile();
+    if (!profile) {
+      $('#facts-panel').classList.remove('visible');
+      return;
+    }
+    $('#fact-bmr').textContent = Math.round(Calc.bmr(profile));
+    $('#fact-tdee').textContent = Math.round(Calc.tdee(profile));
+    $('#fact-protein').textContent = Math.round(Calc.proteinTarget(profile));
+    $('#fact-calories').textContent = Math.round(Calc.calorieTarget(profile));
+    $('#fact-water').textContent = (Calc.waterTarget_ml(profile) / 1000).toFixed(1);
+    $('#facts-panel').classList.add('visible');
+  }
+
+  function renderAuthState() {
+    const el = $('#auth-state');
+    const u = Auth.user();
+    if (u) {
+      el.textContent = u.name;
+      el.classList.add('signed-in');
+    } else {
+      el.textContent = 'Pick user';
+      el.classList.remove('signed-in');
+    }
+    document.body.classList.toggle('is-admin', Auth.isAdmin());
+  }
+
+  // Render the tap-to-pick roster inside the picker modal.
+  function renderUserPicker() {
+    const wrap = $('#user-picker');
+    const active = Auth.user();
+    wrap.innerHTML = USERS.map(u => `
+      <button class="picker-btn ${u.role === 'admin' ? 'admin' : ''} ${active && active.id === u.id ? 'active' : ''}" data-id="${u.id}">
+        <span class="pk-avatar">${escapeHTML(u.name[0])}</span>
+        <span>
+          <span class="pk-name">${escapeHTML(u.name)}</span><br>
+          <span class="pk-role">${escapeHTML(u.role)}</span>
+        </span>
+      </button>
+    `).join('');
+    wrap.querySelectorAll('.picker-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Auth.select(btn.dataset.id);
+        renderAuthState();
+        closeModal('modal-auth');
+        setView('chart');
+      });
+    });
+    $('#auth-logout-btn').style.display = active ? 'block' : 'none';
+  }
+
+  function openModal(id) {
+    $(`#${id}`).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(id) {
+    $(`#${id}`).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function init() {
+    // Bottom-nav buttons (data-view only — Guide is a separate <a> link)
+    $$('.nav-btn[data-view]').forEach(btn => {
+      btn.addEventListener('click', () => setView(btn.dataset.view));
+    });
+
+    // Add button
+    $('#add-btn').addEventListener('click', () => {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      $('#add-date').value = now.toISOString().slice(0, 16);
+      $('#add-weight').value = '';
+      $('#add-clothes').value = '';
+      $('#add-notes').value = '';
+      openModal('modal-add');
+      setTimeout(() => $('#add-weight').focus(), 50);
+    });
+
+    // Modal close buttons & backdrop
+    $$('.modal-close').forEach(btn => {
+      btn.addEventListener('click', e => closeModal(e.target.closest('.modal').id));
+    });
+    $$('.modal').forEach(modal => {
+      modal.addEventListener('click', e => {
+        if (e.target === modal) closeModal(modal.id);
+      });
+    });
+
+    // Add-entry form
+    $('#form-add').addEventListener('submit', e => {
+      e.preventDefault();
+      const weight = parseFloat($('#add-weight').value);
+      const clothesWeight = parseFloat($('#add-clothes').value) || null;
+      const date = new Date($('#add-date').value).toISOString();
+      const notes = $('#add-notes').value.trim();
+      if (!weight || !date) return;
+      Store.addEntry({ weight, date, notes, clothesWeight });
+      closeModal('modal-add');
+      setView('chart');
+    });
+
+    // Profile button
+    $('#profile-btn').addEventListener('click', () => {
+      const profile = Store.getProfile();
+      if (profile) {
+        $('#prof-sex').value = profile.sex;
+        $('#prof-height').value = profile.height;
+        $('#prof-age').value = profile.age;
+        $('#prof-weight').value = profile.weight;
+        $('#prof-activity').value = profile.activity;
+        renderFacts();
+      } else {
+        $('#facts-panel').classList.remove('visible');
+      }
+      openModal('modal-profile');
+    });
+
+    // Profile form
+    $('#form-profile').addEventListener('submit', e => {
+      e.preventDefault();
+      const profile = {
+        sex: $('#prof-sex').value,
+        height: parseFloat($('#prof-height').value),
+        age: parseInt($('#prof-age').value),
+        weight: parseFloat($('#prof-weight').value),
+        activity: $('#prof-activity').value,
+      };
+      Store.saveProfile(profile);
+      renderFacts();
+    });
+
+    // User picker — open modal
+    $('#auth-state').addEventListener('click', () => {
+      renderUserPicker();
+      openModal('modal-auth');
+    });
+
+    // User picker — clear selection
+    $('#auth-logout-btn').addEventListener('click', () => {
+      Auth.logout();
+      renderAuthState();
+      renderUserPicker();
+    });
+
+    // ---- Export button (in profile modal) ----
+    $('#export-btn').addEventListener('click', async () => {
+      try {
+        const { fileName, bytes } = await Exporter.downloadFile();
+        const kb = (bytes / 1024).toFixed(0);
+        alert(`Saved ${fileName} (${kb} KB). Send the file to your admin.`);
+      } catch (err) {
+        console.error(err);
+        alert('Export failed: ' + err.message);
+      }
+    });
+
+    // ---- Diet log: add-meal modal ----
+    $('#meal-add-btn').addEventListener('click', () => {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      $('#meal-date').value = now.toISOString().slice(0, 16);
+      $('#meal-desc').value = '';
+      pendingMealPhotos = [];
+      renderPendingPhotos();
+      openModal('modal-meal');
+      setTimeout(() => $('#meal-desc').focus(), 50);
+    });
+
+    $('#meal-photo-pick').addEventListener('click', () => {
+      $('#meal-photos').click();
+    });
+
+    $('#meal-photos').addEventListener('change', async e => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      const help = $('#meal-photo-help');
+      help.textContent = 'Compressing photos…';
+      try {
+        for (const f of files) {
+          if (!f.type.startsWith('image/')) continue;
+          const dataUrl = await ImageUtil.compress(f);
+          pendingMealPhotos.push(dataUrl);
+        }
+        renderPendingPhotos();
+        help.textContent = `${pendingMealPhotos.length} photo(s) ready. Photos are downscaled to ~1024px JPEG.`;
+      } catch (err) {
+        help.textContent = 'Photo failed: ' + err.message;
+      }
+      e.target.value = '';
+    });
+
+    $('#form-meal').addEventListener('submit', async e => {
+      e.preventDefault();
+      const date = new Date($('#meal-date').value).toISOString();
+      const description = $('#meal-desc').value.trim();
+      if (!date || !description) return;
+      try {
+        await Meals.add({ date, description, photos: pendingMealPhotos.slice() });
+        pendingMealPhotos = [];
+        closeModal('modal-meal');
+        renderMeals();
+      } catch (err) {
+        alert('Save failed (storage may be full): ' + err.message);
+      }
+    });
+
+    // ---- Lightbox ----
+    $('#lightbox').addEventListener('click', () => {
+      $('#lightbox').classList.remove('active');
+      $('#lightbox-img').src = '';
+    });
+
+    // Global ESC: close lightbox first, else top-most open modal
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const lb = $('#lightbox');
+      if (lb.classList.contains('active')) {
+        lb.classList.remove('active');
+        $('#lightbox-img').src = '';
+        return;
+      }
+      const openModals = document.querySelectorAll('.modal.active');
+      if (openModals.length) closeModal(openModals[openModals.length - 1].id);
+    });
+
+    // ---- Admin: open Users view ----
+    $('#admin-btn').addEventListener('click', () => setView('users'));
+
+    // ---- Admin: import file(s) ----
+    $('#admin-import-btn').addEventListener('click', () => {
+      $('#admin-file-input').click();
+    });
+
+    $('#admin-file-input').addEventListener('change', async e => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      let ok = 0, fail = 0;
+      const errors = [];
+      for (const file of files) {
+        try {
+          const text = await Importer.readFile(file);
+          const result = Importer.parse(text);
+          if (!result.ok) { fail++; errors.push(`${file.name}: ${result.error}`); continue; }
+          await Imports.save(result.payload);
+          ok++;
+        } catch (err) {
+          fail++;
+          errors.push(`${file.name}: ${err.message}`);
+        }
+      }
+      e.target.value = '';
+      renderUsers();
+      let msg = `Imported ${ok} file${ok === 1 ? '' : 's'}.`;
+      if (fail) msg += `\n${fail} failed:\n` + errors.join('\n');
+      alert(msg);
+    });
+
+    // ---- Admin: paste JSON ----
+    $('#admin-paste-btn').addEventListener('click', () => {
+      $('#paste-textarea').value = '';
+      openModal('modal-paste');
+    });
+
+    $('#paste-confirm').addEventListener('click', async () => {
+      const text = $('#paste-textarea').value.trim();
+      if (!text) return;
+      const result = Importer.parse(text);
+      if (!result.ok) { alert(result.error); return; }
+      await Imports.save(result.payload);
+      closeModal('modal-paste');
+      renderUsers();
+    });
+
+    // Initial render
+    renderAuthState();
+
+    // Deep link handling
+    const hash = window.location.hash;
+    if (hash === '#add') {
+      setView('chart');
+      setTimeout(() => $('#add-btn').click(), 80);
+      history.replaceState(null, '', window.location.pathname);
+    } else if (hash === '#logs') {
+      setView('logs');
+      history.replaceState(null, '', window.location.pathname);
+    } else if (hash === '#diet') {
+      setView('diet');
+      history.replaceState(null, '', window.location.pathname);
+    } else if (hash === '#users' && Auth.isAdmin()) {
+      setView('users');
+      history.replaceState(null, '', window.location.pathname);
+    } else {
+      setView('chart');
+    }
+  }
+
+  return { init };
+})();
+
+document.addEventListener('DOMContentLoaded', UI.init);
+</script>
+
+</body>
+</html>

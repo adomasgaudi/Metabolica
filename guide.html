@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Trim — PSMF guide</title>
+<meta name="description" content="Protein-sparing modified fast guide and preparation checklist.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     Shared styles — KEEP IN SYNC with index.html if not extracted
+     to a shared style.css. Both pages share the same shell so
+     they can be merged into one file or kept separate easily.
+     ============================================================ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #fafafa; color: #111;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  body {
+    max-width: 480px; margin: 0 auto; min-height: 100vh;
+    display: flex; flex-direction: column;
+    background: #fff; box-shadow: 0 0 32px rgba(0,0,0,0.04);
+    position: relative;
+  }
+  button, a { font-family: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid #eee; background: #fff;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .brand { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand .accent { color: #059669; }
+  .topbar-right { display: flex; align-items: center; gap: 4px; }
+  .auth-state {
+    font-size: 12px; color: #666; padding: 6px 10px;
+    border-radius: 6px; cursor: pointer; transition: background 0.15s;
+  }
+  .auth-state:hover { background: #f4f4f4; }
+  .auth-state.signed-in { color: #059669; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    width: 38px; height: 38px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px; color: #555;
+    transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover { background: #f4f4f4; color: #111; }
+  .icon-btn svg { width: 20px; height: 20px; stroke-width: 1.8; }
+
+  /* SUB-TABS (Guide / Methodology) */
+  .sub-tabs {
+    display: flex; padding: 0 20px;
+    background: #fff; border-bottom: 1px solid #eee;
+    position: sticky; top: 65px; z-index: 49;
+  }
+  .sub-tab {
+    padding: 12px 16px; font-size: 13.5px; font-weight: 500;
+    color: #888; border-bottom: 2px solid transparent;
+    cursor: pointer; transition: color 0.15s, border-color 0.15s;
+    text-decoration: none;
+  }
+  .sub-tab:hover { color: #555; }
+  .sub-tab.active {
+    color: #059669; border-bottom-color: #059669; font-weight: 600;
+  }
+
+  /* CONTENT */
+  .content { flex: 1; padding-bottom: 96px; }
+  .view { padding: 24px 20px 12px; }
+  .view h2 {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #888; margin-bottom: 14px;
+  }
+
+  /* GUIDE */
+  .guide-intro {
+    padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 10px; margin-bottom: 22px;
+    font-size: 13.5px; color: #14532d; line-height: 1.65;
+  }
+
+  /* CHECKLIST */
+  .checklist {
+    background: #fff; border: 1px solid #eee; border-radius: 10px;
+    padding: 18px 16px; margin-bottom: 24px;
+  }
+  .checklist-header {
+    margin-bottom: 14px; display: flex; align-items: baseline;
+    justify-content: space-between; gap: 12px;
+  }
+  .checklist-header h3 {
+    font-size: 14.5px; font-weight: 700; color: #111;
+  }
+  .checklist-count {
+    font-size: 11.5px; font-weight: 600; color: #059669;
+  }
+  .checklist-intro {
+    font-size: 12.5px; color: #666; line-height: 1.55;
+    margin-bottom: 14px;
+  }
+  .checklist-group {
+    margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #f4f4f4;
+  }
+  .checklist-group:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .checklist-group h4 {
+    font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #15803d; font-weight: 700; margin-bottom: 6px;
+  }
+  .checklist-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 9px 4px; cursor: pointer;
+    border-radius: 6px; transition: background 0.12s;
+  }
+  .checklist-item:hover { background: #fafafa; }
+  .checklist-item input {
+    margin-top: 4px; width: 16px; height: 16px;
+    accent-color: #059669; flex-shrink: 0; cursor: pointer;
+  }
+  .checklist-item .item-title {
+    font-size: 14px; font-weight: 600; color: #111;
+    display: block; margin-bottom: 1px; line-height: 1.4;
+  }
+  .checklist-item .item-note {
+    font-size: 12.5px; color: #666; line-height: 1.5;
+  }
+  .checklist-item input:checked ~ .item-body .item-title {
+    text-decoration: line-through; color: #888; font-weight: 500;
+  }
+  .checklist-item input:checked ~ .item-body .item-note { color: #aaa; }
+
+  /* GUIDE SECTIONS */
+  .guide-section {
+    border: 1px solid #eee; border-radius: 10px;
+    margin-bottom: 12px; overflow: hidden; background: #fff;
+  }
+  .guide-section summary {
+    padding: 16px 18px; cursor: pointer;
+    font-weight: 600; font-size: 14.5px; background: #fafafa;
+    list-style: none; display: flex; align-items: center;
+    gap: 12px; user-select: none; transition: background 0.15s;
+  }
+  .guide-section summary:hover { background: #f4f4f4; }
+  .guide-section summary::-webkit-details-marker { display: none; }
+  .guide-section summary::before {
+    content: "▶"; font-size: 9px; color: #888;
+    transition: transform 0.2s; flex-shrink: 0;
+  }
+  .guide-section[open] summary::before { transform: rotate(90deg); }
+  .guide-body {
+    padding: 18px; border-top: 1px solid #eee;
+    font-size: 14px; color: #333; line-height: 1.7;
+  }
+  .guide-body p { margin-bottom: 12px; }
+  .guide-body p:last-child { margin-bottom: 0; }
+  .guide-body ul, .guide-body ol { margin: 10px 0 12px 22px; }
+  .guide-body li { margin-bottom: 6px; }
+  .guide-body strong { color: #111; }
+
+  .disclaimer {
+    margin-top: 22px; padding: 14px 16px;
+    background: #fef9c3; border: 1px solid #fde68a; border-radius: 10px;
+    font-size: 12.5px; color: #713f12; line-height: 1.55;
+  }
+  .disclaimer strong { color: #422006; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    max-width: 480px; margin: 0 auto; background: #fff;
+    border-top: 1px solid #eee; padding: 6px 14px 10px;
+    display: grid; grid-template-columns: 1fr 1fr 84px 1fr;
+    gap: 4px; align-items: center; z-index: 100;
+  }
+  .nav-btn {
+    background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px;
+    padding: 8px 0 4px; color: #999; font-size: 10.5px; font-weight: 500;
+    transition: color 0.15s;
+  }
+  .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.7; }
+  .nav-btn.active { color: #059669; }
+  .nav-btn:hover { color: #555; }
+  .nav-btn.active:hover { color: #059669; }
+  .add-btn-wrap { display: flex; justify-content: center; }
+  .add-btn {
+    background: #059669; color: #fff; border: none;
+    width: 60px; height: 60px; border-radius: 50%; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: -30px; box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    text-decoration: none;
+  }
+  .add-btn:hover {
+    background: #047857; transform: scale(1.05);
+    box-shadow: 0 8px 22px rgba(5, 150, 105, 0.45);
+  }
+  .add-btn:active { transform: scale(0.98); }
+  .add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.6; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- TOP BAR -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<header class="topbar">
+  <div class="brand"><span class="accent">●</span> Trim</div>
+  <div class="topbar-right">
+    <span id="auth-state" class="auth-state">Sign in</span>
+  </div>
+</header>
+
+<div class="sub-tabs">
+  <a class="sub-tab active" href="guide.html">Checklist & guide</a>
+  <a class="sub-tab" href="methodology.html">Methodology</a>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MAIN CONTENT -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<main class="content">
+  <section class="view">
+    <h2>PSMF guide</h2>
+
+    <div class="guide-intro">
+      A protein-sparing modified fast preserves muscle while burning fat. Eat almost only protein, drink water with electrolytes, and break the fast carefully. Use the checklist below to prepare, then open each section for the *why* and the *how*.
+    </div>
+
+    <!-- ───── CHECKLIST ───── -->
+    <div class="checklist">
+      <div class="checklist-header">
+        <h3>Preparation checklist</h3>
+        <span class="checklist-count" id="checklist-count">0 / 0</span>
+      </div>
+      <p class="checklist-intro">Tick each item off as you sort it. Progress is saved locally.</p>
+
+      <div class="checklist-group">
+        <h4>Hardware</h4>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="scale-body">
+          <div class="item-body">
+            <span class="item-title">Bathroom scale</span>
+            <span class="item-note">Same scale, same spot, same time each morning. Daily weigh-ins feed the chart in this app.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="scale-kitchen">
+          <div class="item-body">
+            <span class="item-title">Small kitchen scale</span>
+            <span class="item-note">For weighing protein portions. "1.5 g/kg of bodyweight" needs grams, not guesses.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="measuring-tools">
+          <div class="item-body">
+            <span class="item-title">Measuring cups & spoons</span>
+            <span class="item-note">For electrolyte doses and water targets.</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="checklist-group">
+        <h4>Electrolytes &amp; supplies</h4>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="salt">
+          <div class="item-body">
+            <span class="item-title">Plain salt (sodium)</span>
+            <span class="item-note">3–5 g of sodium per day. Plain table or sea salt is fine.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="potassium">
+          <div class="item-body">
+            <span class="item-title">Potassium chloride ("lite salt")</span>
+            <span class="item-note">For 1–3 g potassium per day. Buy ahead — kidneys flush it hard on low-carb.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="magnesium">
+          <div class="item-body">
+            <span class="item-title">Magnesium glycinate or citrate</span>
+            <span class="item-note">300–400 mg, with dinner. Avoid oxide — it absorbs poorly.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="sweetener">
+          <div class="item-body">
+            <span class="item-title">Sweetener — <strong>stevia drops preferred</strong></span>
+            <span class="item-note">Pick something you tolerate on an empty stomach. Pure stevia drops are the safest. Stevia + erythritol blends often work but are more dubious — some people get GI issues on an empty stomach. Avoid xylitol-style polyols when fasting — intolerance gets worse without food to buffer it.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="chia">
+          <div class="item-body">
+            <span class="item-title">Chia pack (≈100 g) to carry</span>
+            <span class="item-note">Pocket emergency food. Adds a small protein/fibre buffer if you are away from your kitchen and need to hold off a bad decision.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="protein-week1">
+          <div class="item-body">
+            <span class="item-title">Lean protein for week 1</span>
+            <span class="item-note">Chicken breast, white fish, eggs, low-fat dairy, plus leafy greens. Remove the snacks that will tempt you on day 4.</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="checklist-group">
+        <h4>Apps &amp; tools on phone</h4>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="ai-assistant">
+          <div class="item-body">
+            <span class="item-title">Fast-access AI assistant on phone</span>
+            <span class="item-note">For scanning food labels and asking "how much protein in this cut?" in the store. Friction here causes decision fatigue, and decision fatigue is how the plan fails. Make the AI one tap away.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="weight-app">
+          <div class="item-body">
+            <span class="item-title">Weight-tracking app</span>
+            <span class="item-note">Libra Weight Manager (Android) is the established choice. Or use the Trim tracker on this site if it works well for you.</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="checklist-group">
+        <h4>Calibration — do these once, before day 1</h4>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="cal-clothes">
+          <div class="item-body">
+            <span class="item-title">Weigh your clothes</span>
+            <span class="item-note">Weigh one heavier outfit and one lighter outfit on the kitchen scale. You weigh daily — you will not always strip down — so you need a good guess for the "with clothes" offset. Write the numbers somewhere you will find later.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="cal-toilet">
+          <div class="item-body">
+            <span class="item-title">Measure the toilet delta</span>
+            <span class="item-note">One morning: step on the scale, use the toilet, step on again. The difference is your typical morning toilet delta. Knowing it makes the daily weigh-in less noisy.</span>
+          </div>
+        </label>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="cal-fluctuation">
+          <div class="item-body">
+            <span class="item-title">Measure the natural daily fluctuation</span>
+            <span class="item-note">Weigh in the morning, then again 2–3 hours later without eating or drinking. Roughly 100 g/hour decrease is normal (sweat, breath). Once you know your fluctuation range, you stop misreading noise as a trend.</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="checklist-group">
+        <h4>Medical</h4>
+        <label class="checklist-item">
+          <input type="checkbox" data-key="doctor">
+          <div class="item-body">
+            <span class="item-title">Talk to a doctor</span>
+            <span class="item-note">Especially if you take medication, are pregnant, are under 18, or have any history of kidney, liver, heart, or eating-disorder issues. PSMF is a real medical intervention.</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- ───── EXPANDABLE SECTIONS ───── -->
+
+    <details class="guide-section">
+      <summary>1. How to fast</summary>
+      <div class="guide-body">
+        <p>The core protocol: very low calories (most of them protein), almost no carbohydrate, very little fat. Typical window is 1–4 weeks, depending on body composition and goals.</p>
+        <ul>
+          <li><strong>Protein</strong> — roughly 1.2–1.5 g per kg of current body weight, split across 3–4 meals.</li>
+          <li><strong>Carbs</strong> — under 20 g per day, ideally from leafy greens only.</li>
+          <li><strong>Fat</strong> — incidental only, from the protein sources themselves.</li>
+          <li><strong>Water</strong> — at least 35 ml per kg of body weight per day.</li>
+        </ul>
+        <p>Hunger fades after the first 3–5 days as ketones rise. Energy stabilises. Stop if you feel weak, dizzy, or unwell — refeed gradually.</p>
+      </div>
+    </details>
+
+    <details class="guide-section">
+      <summary>2. Preparing for low-carb eating</summary>
+      <div class="guide-body">
+        <p>Two weeks before the fast, reduce carbs gradually. A sudden cut from a high-carb baseline causes the worst of the "keto flu" — fatigue, headache, irritability. The fix is a glide path, not a cliff.</p>
+        <ul>
+          <li><strong>Week −2</strong> — remove sugars and refined flours. Keep some whole-grain carbs.</li>
+          <li><strong>Week −1</strong> — cut starches. Keep only fibrous vegetables.</li>
+          <li><strong>Day 0</strong> — protein-only.</li>
+        </ul>
+        <p>Stock the kitchen with what you will actually eat. Remove the snacks that will tempt you on day 4.</p>
+      </div>
+    </details>
+
+    <details class="guide-section">
+      <summary>3. Electrolyte supplementation</summary>
+      <div class="guide-body">
+        <p>The single most common cause of feeling awful on a low-carb fast is electrolyte loss, not lack of food. Insulin drops when carbs drop, and the kidneys flush sodium. You have to replace it deliberately.</p>
+        <ul>
+          <li><strong>Sodium</strong> — 3–5 g per day (about 1.5–2.5 teaspoons of salt, spread across the day).</li>
+          <li><strong>Potassium</strong> — 1–3 g per day (leafy greens, avocado, or supplement).</li>
+          <li><strong>Magnesium</strong> — 300–400 mg per day (glycinate or citrate, evening).</li>
+        </ul>
+        <p>A simple daily drink: 1 teaspoon salt + 500 mg potassium chloride in 1 litre of water, sipped through the day. Magnesium taken as a tablet at dinner.</p>
+      </div>
+    </details>
+
+    <details class="guide-section">
+      <summary>4. Tools to prepare</summary>
+      <div class="guide-body">
+        <p>The fast goes smoother when the friction of measuring, weighing, and decision-making is removed up front. The checklist above lists every item you will need.</p>
+        <p>Two notes that the checklist cannot fit:</p>
+        <ul>
+          <li><strong>The AI assistant.</strong> Set it up so the launch is one tap from the lock screen. The reason matters — every time you stand in a shop wondering whether something fits the plan, friction wins and you eat the wrong thing. Removing that friction is a multiplier on every other choice you make.</li>
+          <li><strong>The sweetener.</strong> Stevia drops are the safest because pure stevia has no caloric load and almost no GI footprint. Stevia + erythritol blends work for many people but produce bloating or worse on an empty stomach for some. Test before day 1, not on day 4.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="guide-section">
+      <summary>5. How to weigh yourself accurately</summary>
+      <div class="guide-body">
+        <p>A daily weight is one data point against a noisy background. The point of the calibration tasks in the checklist above is to <em>know the noise</em> so you can read the signal.</p>
+        <p><strong>Protocol.</strong></p>
+        <ul>
+          <li>Same scale, same spot on the floor, every time.</li>
+          <li>Morning, after using the toilet, before eating or drinking. This is your cleanest daily number.</li>
+          <li>If you must weigh in clothes, log the clothes weight too — the form in the tracker has a field for it.</li>
+          <li>Add a note to the entry whenever the context is unusual: "after dinner", "post-workout", "weighing in coat".</li>
+        </ul>
+        <p><strong>Knowing the fluctuation.</strong></p>
+        <ul>
+          <li>Toilet delta — typically a few hundred grams. Measured once and remembered.</li>
+          <li>Hourly drift without water — roughly 100 g/hour from sweat and breath. Measured by weighing yourself at 7 am and again at 10 am with nothing in between.</li>
+          <li>Clothing range — your lighter and heavier outfits, weighed once, become a quick lookup.</li>
+        </ul>
+        <p>Once you know these three numbers, the daily reading stops being mysterious. A morning weight that is 400 g up is not a "gain" — it could be the toilet not done yet or the heavier outfit. The signal lives in the weekly trend, not the daily noise.</p>
+      </div>
+    </details>
+
+    <div class="disclaimer">
+      <strong>Important.</strong> A protein-sparing modified fast is a real medical intervention. Talk to a doctor before starting, especially if you take medication, are pregnant, are under 18, or have any kidney, liver, heart, or eating-disorder history. This app is a tracker and a working guide, not medical advice.
+    </div>
+  </section>
+</main>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- BOTTOM NAV — Chart/Logs/+ link back to tracker -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<nav class="bottom-nav">
+  <a class="nav-btn" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
+    <span>Chart</span>
+  </a>
+  <a class="nav-btn" href="index.html#logs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
+    <span>Logs</span>
+  </a>
+  <div class="add-btn-wrap">
+    <a class="add-btn" href="index.html#add" aria-label="Add weight">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </a>
+  </div>
+  <button class="nav-btn active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v15a2 2 0 0 0 2 2h13"/><path d="M4 4h13a2 2 0 0 1 2 2v13H6a2 2 0 0 0-2 2"/></svg>
+    <span>Guide</span>
+  </button>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SCRIPT -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<script>
+/* ============================================================
+   Trim — guide page
+
+   Modules:
+   - Store : same shared persistence layer as index.html.
+   - UI    : checklist + auth-state badge for this page only.
+
+   To plug in a real backend, swap Store's implementation in BOTH
+   files (or extract to a shared app.js). The checklist key naming
+   matches the data-key attributes on each <input> so the storage
+   format stays simple.
+   ============================================================ */
+
+const Store = (() => {
+  const K = {
+    AUTH: 'trim.auth.v1',
+    CHECKLIST: 'trim.checklist.v1',
+  };
+  const read = (key, fallback) => {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return v === null ? fallback : v;
+    } catch { return fallback; }
+  };
+  const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+
+  return {
+    getAuth() { return read(K.AUTH, null); },
+    getChecklist() { return read(K.CHECKLIST, {}); },
+    setChecklistItem(key, checked) {
+      const c = this.getChecklist();
+      if (checked) c[key] = true;
+      else delete c[key];
+      write(K.CHECKLIST, c);
+    },
+  };
+})();
+
+const UI = (() => {
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => document.querySelectorAll(sel);
+
+  function renderAuthState() {
+    const el = $('#auth-state');
+    const auth = Store.getAuth();
+    if (auth) {
+      el.textContent = auth.email;
+      el.classList.add('signed-in');
+    } else {
+      el.textContent = 'Sign in';
+      el.classList.remove('signed-in');
+    }
+  }
+
+  function renderChecklistCount() {
+    const total = $$('.checklist-item input[type="checkbox"]').length;
+    const checked = $$('.checklist-item input[type="checkbox"]:checked').length;
+    $('#checklist-count').textContent = `${checked} / ${total}`;
+  }
+
+  function initChecklist() {
+    const state = Store.getChecklist();
+    $$('.checklist-item input[type="checkbox"]').forEach(input => {
+      const key = input.dataset.key;
+      input.checked = !!state[key];
+      input.addEventListener('change', () => {
+        Store.setChecklistItem(key, input.checked);
+        renderChecklistCount();
+      });
+    });
+    renderChecklistCount();
+  }
+
+  function init() {
+    renderAuthState();
+    initChecklist();
+
+    // Tapping the auth label routes back to the tracker, where
+    // the sign-in modal lives.
+    $('#auth-state').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  }
+
+  return { init };
+})();
+
+document.addEventListener('DOMContentLoaded', UI.init);
+</script>
+
+</body>
+</html>
