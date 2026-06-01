@@ -3,8 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.1.6 — weight tracker</title>
+<title>Metabolica v0.2 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
+<!-- Tier gate: the full tracker is the "beta" tier. Anyone without beta access
+     (the default "alpha" tier) is bounced to the guide before the app loads. -->
+<script>
+  try { if ((localStorage.getItem('metabolica_tier') || 'alpha') !== 'beta') location.replace('guide.html'); } catch (e) {}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- date adapter: lets the chart's x-axis use a real time scale so gaps between entries render to scale -->
@@ -65,6 +70,59 @@
   .icon-btn:hover { background: #f4f4f4; color: #111; }
   .icon-btn svg { width: 20px; height: 20px; stroke-width: 1.8; }
 
+  /* ── TIERS ──────────────────────────────────────────
+     alpha (default): guide only — everything else locked + "soon".
+     beta: the full tracker. body.tier-alpha toggles the locked look. */
+  .alpha-only { display: none; }
+  body.tier-alpha .alpha-only { display: inline-flex; }
+  body.tier-alpha .beta-only { display: none !important; }
+  .beta-btn {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    color: #0891b2; background: #ecfeff; border: 1px solid #a5f3fc;
+    padding: 6px 14px; border-radius: 8px; cursor: pointer;
+  }
+  .beta-btn:hover { background: #cffafe; }
+  body.tier-alpha .nav-locked {
+    color: #cbd5e1 !important; pointer-events: none; cursor: default;
+  }
+  body.tier-alpha .nav-locked span:not(.soon-tag) { display: none; }
+  .soon-tag { display: none; }
+  body.tier-alpha .nav-locked .soon-tag {
+    display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #fff; background: #cbd5e1;
+    border-radius: 6px; padding: 2px 6px;
+  }
+
+  /* Beta password gate */
+  .beta-gate {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(17,17,17,0.5); display: flex;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .beta-gate[hidden] { display: none; }
+  .beta-gate-card {
+    background: #fff; border-radius: 16px; padding: 24px 22px;
+    width: 100%; max-width: 320px; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .beta-gate-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .beta-gate-card p { font-size: 13.5px; color: #666; margin-bottom: 14px; }
+  .beta-gate-card input {
+    width: 100%; padding: 11px 12px; font-size: 15px;
+    border: 1px solid #ddd; border-radius: 10px; margin-bottom: 6px;
+  }
+  .beta-gate-card input:focus { outline: none; border-color: #0891b2; }
+  .beta-error { color: #dc2626 !important; font-size: 12.5px !important; margin: 2px 0 8px !important; }
+  .beta-gate-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .beta-gate-actions button {
+    flex: 1; padding: 11px; font-size: 14px; font-weight: 600;
+    border-radius: 10px; cursor: pointer;
+  }
+  .beta-cancel { background: #f4f4f4; border: 1px solid #e5e5e5; color: #444; }
+  .beta-go {
+    background: linear-gradient(135deg, #059669 0%, #0891b2 55%, #0284c7 100%);
+    border: none; color: #fff;
+  }
+
   /* CONTENT */
   .content { flex: 1; padding-bottom: 96px; }
   .view { display: none; padding: 24px 20px 12px; }
@@ -105,6 +163,18 @@
     margin-bottom: 6px; overflow: hidden;
   }
   .chart-scroll { position: relative; width: 100%; height: 100%; }
+  /* Floating HTML legend — lives over the canvas so its text can change
+     (e.g. the avg window) without reflowing the plot and jiggling the line. */
+  .chart-legend {
+    position: absolute; top: 8px; right: 10px; z-index: 5;
+    display: flex; gap: 12px; padding: 5px 9px; pointer-events: none;
+    background: rgba(255,255,255,0.82); border: 1px solid #eee; border-radius: 8px;
+    font-size: 11px; color: #555; font-weight: 500;
+  }
+  .lg-item { display: inline-flex; align-items: center; gap: 5px; }
+  .lg-sw { width: 14px; height: 3px; border-radius: 2px; }
+  .lg-weight { background: #0891b2; }
+  .lg-avg { background: #f59e0b; }
 
   /* SETTINGS PANEL (above the chart, collapsed by default to maximize chart) */
   .chart-settings {
@@ -507,10 +577,11 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.6</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2</span></div>
   <div class="topbar-right">
-    <span id="auth-state" class="auth-state">Sign in</span>
-    <button id="admin-btn" class="icon-btn admin-only" aria-label="Admin — manage users">
+    <button id="beta-btn" class="beta-btn alpha-only" type="button">Beta</button>
+    <span id="auth-state" class="auth-state beta-only">Sign in</span>
+    <button id="admin-btn" class="icon-btn admin-only beta-only" aria-label="Admin — manage users">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     </button>
     <button id="profile-btn" class="icon-btn" aria-label="Profile">
@@ -547,6 +618,10 @@
       </div>
     </div>
     <div class="chart-container">
+      <div class="chart-legend" id="chart-legend">
+        <span class="lg-item"><i class="lg-sw lg-weight"></i>Weight</span>
+        <span class="lg-item"><i class="lg-sw lg-avg"></i><span id="lg-avg">Avg · 15d</span></span>
+      </div>
       <div class="chart-scroll">
         <canvas id="weightChart"></canvas>
       </div>
@@ -602,20 +677,22 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <nav class="bottom-nav">
-  <button class="nav-btn active" data-view="chart">
+  <button class="nav-btn active nav-locked" data-view="chart">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
     <span>Chart</span>
+    <span class="soon-tag">soon</span>
   </button>
-  <button class="nav-btn" data-view="logs">
+  <button class="nav-btn nav-locked" data-view="logs">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
     <span>Logs</span>
+    <span class="soon-tag">soon</span>
   </button>
-  <div class="add-btn-wrap">
+  <div class="add-btn-wrap beta-only">
     <button class="add-btn" id="add-btn" aria-label="Add weight">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
   </div>
-  <button class="nav-btn" data-view="diet">
+  <button class="nav-btn nav-locked" data-view="diet">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
     <span>Diet</span>
   </button>
@@ -624,6 +701,20 @@
     <span>Guide</span>
   </a>
 </nav>
+
+<!-- Beta password gate -->
+<div class="beta-gate" id="beta-gate" hidden>
+  <div class="beta-gate-card">
+    <h3>Enter beta</h3>
+    <p>The full tracker is in private beta. Enter the password to continue.</p>
+    <input type="password" id="beta-pass" placeholder="Password" autocomplete="off">
+    <p class="beta-error" id="beta-error" hidden>Wrong password.</p>
+    <div class="beta-gate-actions">
+      <button class="beta-cancel" id="beta-cancel" type="button">Cancel</button>
+      <button class="beta-go" id="beta-go" type="button">Unlock</button>
+    </div>
+  </div>
+</div>
 
 
 <!-- ═══════════════════════════════════════════════ -->
@@ -1199,6 +1290,27 @@ const UI = (() => {
   const $$ = sel => document.querySelectorAll(sel);
   let chart = null;
   let viewerChart = null;
+
+  // ── Tiers: 'alpha' (guide only, default) vs 'beta' (full tracker). ──
+  const Tier = {
+    KEY: 'metabolica_tier',
+    get() { try { return localStorage.getItem(this.KEY) === 'beta' ? 'beta' : 'alpha'; } catch (e) { return 'alpha'; } },
+    set(t) { try { localStorage.setItem(this.KEY, t); } catch (e) {} },
+  };
+  function applyTier() { document.body.classList.toggle('tier-alpha', Tier.get() === 'alpha'); }
+  function wireBetaGate() {
+    const gate = $('#beta-gate');
+    if (!gate) return;
+    const open = () => { $('#beta-error').hidden = true; $('#beta-pass').value = ''; gate.hidden = false; setTimeout(() => $('#beta-pass').focus(), 50); };
+    const tryUnlock = () => {
+      if ($('#beta-pass').value.trim() === 'ag') { Tier.set('beta'); location.href = 'index.html'; }
+      else { $('#beta-error').hidden = false; }
+    };
+    $('#beta-btn')?.addEventListener('click', open);
+    $('#beta-cancel')?.addEventListener('click', () => { gate.hidden = true; });
+    $('#beta-go')?.addEventListener('click', tryUnlock);
+    $('#beta-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+  }
   let avgWindow = 15;  // trailing moving-average window, in days (1–100)
 
   // Trailing N-day moving average. For each entry, averages every entry whose
@@ -1272,6 +1384,13 @@ const UI = (() => {
     container.style.display = 'block';
     settings.style.display = 'block';
     sizeChart();  // give the container a real height before Chart.js reads it
+    $('#lg-avg').textContent = `Avg · ${avgWindow}d`;
+
+    // Trailing empty space on the right so the latest point isn't jammed
+    // against the edge and there's room to scroll forward through time.
+    const xs = sorted.map(e => new Date(e.date).getTime());
+    const xMax = Math.max(...xs);
+    const span = Math.max(xMax - Math.min(...xs), 86400000);
 
     const ctx = $('#weightChart');
     if (chart) chart.destroy();
@@ -1287,7 +1406,7 @@ const UI = (() => {
           pointRadius: 3.5, pointBackgroundColor: '#0891b2',
           pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6,
         }, {
-          label: `${avgWindow}-day avg`,
+          label: 'Moving avg',
           data: movingAverage(sorted, avgWindow),
           borderColor: '#f59e0b',
           borderWidth: 2.5, tension: 0.32, fill: false,
@@ -1299,10 +1418,7 @@ const UI = (() => {
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: true, position: 'top', align: 'end',
-            labels: { boxWidth: 14, boxHeight: 2, font: { size: 11 }, color: '#666', usePointStyle: false },
-          },
+          legend: { display: false },  // replaced by the floating HTML legend (#chart-legend)
           tooltip: {
             backgroundColor: '#111', padding: 10, displayColors: false,
             callbacks: {
@@ -1311,8 +1427,8 @@ const UI = (() => {
             },
           },
           // Zoom into any date range (x) and weight range (y): pinch on touch,
-          // wheel on desktop, or drag a box. Pan once zoomed. Limits keep the
-          // view from drifting past the actual data.
+          // wheel on desktop, or drag a box. Pan freely along time (no x limit);
+          // y stays bounded to the data so it can't drift into empty space.
           zoom: {
             zoom: {
               wheel: { enabled: true },
@@ -1321,16 +1437,20 @@ const UI = (() => {
               mode: 'xy',
             },
             pan: { enabled: true, mode: 'xy' },
-            limits: {
-              x: { min: 'original', max: 'original' },
-              y: { min: 'original', max: 'original' },
-            },
+            limits: { y: { min: 'original', max: 'original' } },
           },
         },
         scales: {
-          y: { beginAtZero: false, grid: { color: '#f0f0f0' }, ticks: { color: '#888', font: { size: 11 } } },
+          y: {
+            beginAtZero: false, grid: { color: '#f0f0f0' },
+            ticks: { color: '#888', font: { size: 11 }, callback: v => v.toFixed(1) },
+            // Pin the axis width so changing tick labels (90 → 90.05) don't
+            // shift the plot's left edge and jerk the whole chart sideways.
+            afterFit: axis => { axis.width = 48; },
+          },
           x: {
             type: 'time',
+            max: xMax + span * 0.12,  // trailing room to scroll into
             time: { displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy' } },
             grid: { display: false },
             ticks: { color: '#888', font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
@@ -1338,6 +1458,16 @@ const UI = (() => {
         },
       },
     });
+  }
+
+  // Update just the moving-average line in place — no destroy/rebuild and no
+  // sizeChart, so dragging the slider doesn't jiggle or resize the chart.
+  function updateAvgLine() {
+    if (!chart) { renderChart(); return; }
+    const sorted = [...Store.getLog()].sort((a, b) => new Date(a.date) - new Date(b.date));
+    chart.data.datasets[1].data = movingAverage(sorted, avgWindow);
+    $('#lg-avg').textContent = `Avg · ${avgWindow}d`;
+    chart.update('none');
   }
 
   function renderLogs() {
@@ -1673,6 +1803,8 @@ const UI = (() => {
   }
 
   function init() {
+    applyTier();
+    wireBetaGate();
     Seed.run();  // populate Adomas's log from the bundled Libra export (once)
     // Bottom-nav buttons (data-view only — Guide is a separate <a> link)
     $$('.nav-btn[data-view]').forEach(btn => {
@@ -1688,7 +1820,7 @@ const UI = (() => {
       $('#avg-range').value = n;
       if (echo) $('#avg-number').value = n;
       $('#avg-days').textContent = n;
-      renderChart();
+      updateAvgLine();
     };
     $('#avg-range').addEventListener('input', e => setAvg(e.target.value));
     $('#avg-number').addEventListener('input', e => setAvg(e.target.value, false));

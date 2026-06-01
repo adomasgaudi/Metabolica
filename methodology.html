@@ -211,7 +211,7 @@
 <body>
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.1</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
   </div>
@@ -430,14 +430,26 @@
    topbar (read-only). All math is at the bottom under Calc.
    ============================================================ */
 
+// Same roster the tracker (index.html) uses, so the header here reflects the
+// exact same picked user — not a separate sign-in. Keep in sync with index.html.
+const USERS = [
+  { id: 'adomas',  name: 'Adomas',  role: 'user'  },
+  { id: 'andrius', name: 'Andrius', role: 'user'  },
+  { id: 'mantas',  name: 'Mantas',  role: 'user'  },
+  { id: 'simona',  name: 'Simona',  role: 'user'  },
+  { id: 'admin',   name: 'Admin',   role: 'admin' },
+];
+const USER_BY_ID = Object.fromEntries(USERS.map(u => [u.id, u]));
+
 const Store = (() => {
-  const read = (key, fallback) => {
-    try {
-      const v = JSON.parse(localStorage.getItem(key));
-      return v === null ? fallback : v;
-    } catch { return fallback; }
+  return {
+    getActiveUser() {
+      try {
+        const id = localStorage.getItem('trim.activeUser.v1');
+        return id ? (USER_BY_ID[id] || null) : null;
+      } catch { return null; }
+    },
   };
-  return { getAuth() { return read('trim.auth.v1', null); } };
 })();
 
 const Calc = {
@@ -454,12 +466,12 @@ const UI = (() => {
 
   function renderAuthState() {
     const el = $('#auth-state');
-    const auth = Store.getAuth();
-    if (auth) {
-      el.textContent = auth.email;
+    const u = Store.getActiveUser();
+    if (u) {
+      el.textContent = u.name;
       el.classList.add('signed-in');
     } else {
-      el.textContent = 'Sign in';
+      el.textContent = 'Pick user';
       el.classList.remove('signed-in');
     }
   }

@@ -50,6 +50,55 @@
   }
   .auth-state:hover { background: #f4f4f4; }
   .auth-state.signed-in { color: #0d9488; }
+
+  /* ── TIERS (see index.html for the model) ── */
+  .alpha-only { display: none; }
+  body.tier-alpha .alpha-only { display: inline-flex; }
+  body.tier-alpha .beta-only { display: none !important; }
+  .beta-btn {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    color: #0891b2; background: #ecfeff; border: 1px solid #a5f3fc;
+    padding: 6px 14px; border-radius: 8px; cursor: pointer;
+  }
+  .beta-btn:hover { background: #cffafe; }
+  body.tier-alpha .nav-locked {
+    color: #cbd5e1 !important; pointer-events: none; cursor: default;
+  }
+  body.tier-alpha .nav-locked span:not(.soon-tag) { display: none; }
+  .soon-tag { display: none; }
+  body.tier-alpha .nav-locked .soon-tag {
+    display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #fff; background: #cbd5e1;
+    border-radius: 6px; padding: 2px 6px;
+  }
+  .beta-gate {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(17,17,17,0.5); display: flex;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .beta-gate[hidden] { display: none; }
+  .beta-gate-card {
+    background: #fff; border-radius: 16px; padding: 24px 22px;
+    width: 100%; max-width: 320px; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .beta-gate-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .beta-gate-card p { font-size: 13.5px; color: #666; margin-bottom: 14px; }
+  .beta-gate-card input {
+    width: 100%; padding: 11px 12px; font-size: 15px;
+    border: 1px solid #ddd; border-radius: 10px; margin-bottom: 6px;
+  }
+  .beta-gate-card input:focus { outline: none; border-color: #0891b2; }
+  .beta-error { color: #dc2626 !important; font-size: 12.5px !important; margin: 2px 0 8px !important; }
+  .beta-gate-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .beta-gate-actions button {
+    flex: 1; padding: 11px; font-size: 14px; font-weight: 600;
+    border-radius: 10px; cursor: pointer;
+  }
+  .beta-cancel { background: #f4f4f4; border: 1px solid #e5e5e5; color: #444; }
+  .beta-go {
+    background: linear-gradient(135deg, #059669 0%, #0891b2 55%, #0284c7 100%);
+    border: none; color: #fff;
+  }
   .icon-btn {
     background: none; border: none; cursor: pointer;
     width: 38px; height: 38px;
@@ -234,9 +283,10 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.1</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2</span></div>
   <div class="topbar-right">
-    <span id="auth-state" class="auth-state">Sign in</span>
+    <button id="beta-btn" class="beta-btn alpha-only" type="button">Beta</button>
+    <span id="auth-state" class="auth-state beta-only">Sign in</span>
   </div>
 </header>
 
@@ -253,10 +303,6 @@
 <main class="content">
   <section class="view">
     <h2>PSMF guide</h2>
-
-    <div class="guide-intro">
-      A protein-sparing modified fast preserves muscle while burning fat. Eat almost only protein, drink water with electrolytes, and break the fast carefully. Use the checklist below to prepare, then open each section for the *why* and the *how*.
-    </div>
 
     <!-- ───── CHECKLIST ───── -->
     <div class="checklist">
@@ -479,28 +525,45 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <nav class="bottom-nav">
-  <a class="nav-btn" href="index.html">
+  <a class="nav-btn nav-locked" href="index.html">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
     <span>Chart</span>
+    <span class="soon-tag">soon</span>
   </a>
-  <a class="nav-btn" href="index.html#logs">
+  <a class="nav-btn nav-locked" href="index.html#logs">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
     <span>Logs</span>
+    <span class="soon-tag">soon</span>
   </a>
-  <div class="add-btn-wrap">
+  <div class="add-btn-wrap beta-only">
     <a class="add-btn" href="index.html#add" aria-label="Add weight">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </a>
   </div>
-  <a class="nav-btn" href="index.html#diet">
+  <a class="nav-btn nav-locked" href="index.html#diet">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
     <span>Diet</span>
+    <span class="soon-tag">soon</span>
   </a>
   <button class="nav-btn active">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v15a2 2 0 0 0 2 2h13"/><path d="M4 4h13a2 2 0 0 1 2 2v13H6a2 2 0 0 0-2 2"/></svg>
     <span>Guide</span>
   </button>
 </nav>
+
+<!-- Beta password gate -->
+<div class="beta-gate" id="beta-gate" hidden>
+  <div class="beta-gate-card">
+    <h3>Enter beta</h3>
+    <p>The full tracker is in private beta. Enter the password to continue.</p>
+    <input type="password" id="beta-pass" placeholder="Password" autocomplete="off">
+    <p class="beta-error" id="beta-error" hidden>Wrong password.</p>
+    <div class="beta-gate-actions">
+      <button class="beta-cancel" id="beta-cancel" type="button">Cancel</button>
+      <button class="beta-go" id="beta-go" type="button">Unlock</button>
+    </div>
+  </div>
+</div>
 
 
 <!-- ═══════════════════════════════════════════════ -->
@@ -521,9 +584,20 @@
    format stays simple.
    ============================================================ */
 
+// Same roster the tracker (index.html) uses, so the header here reflects the
+// exact same picked user — not a separate sign-in. Keep in sync with index.html.
+const USERS = [
+  { id: 'adomas',  name: 'Adomas',  role: 'user'  },
+  { id: 'andrius', name: 'Andrius', role: 'user'  },
+  { id: 'mantas',  name: 'Mantas',  role: 'user'  },
+  { id: 'simona',  name: 'Simona',  role: 'user'  },
+  { id: 'admin',   name: 'Admin',   role: 'admin' },
+];
+const USER_BY_ID = Object.fromEntries(USERS.map(u => [u.id, u]));
+
 const Store = (() => {
   const K = {
-    AUTH: 'trim.auth.v1',
+    ACTIVE: 'trim.activeUser.v1',   // shared with the tracker
     CHECKLIST: 'trim.checklist.v1',
   };
   const read = (key, fallback) => {
@@ -535,7 +609,12 @@ const Store = (() => {
   const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 
   return {
-    getAuth() { return read(K.AUTH, null); },
+    getActiveUser() {
+      try {
+        const id = localStorage.getItem(K.ACTIVE);
+        return id ? (USER_BY_ID[id] || null) : null;
+      } catch { return null; }
+    },
     getChecklist() { return read(K.CHECKLIST, {}); },
     setChecklistItem(key, checked) {
       const c = this.getChecklist();
@@ -550,14 +629,35 @@ const UI = (() => {
   const $ = sel => document.querySelector(sel);
   const $$ = sel => document.querySelectorAll(sel);
 
+  // ── Tiers: 'alpha' (this guide is the alpha home) vs 'beta' (full tracker). ──
+  const Tier = {
+    KEY: 'metabolica_tier',
+    get() { try { return localStorage.getItem(this.KEY) === 'beta' ? 'beta' : 'alpha'; } catch (e) { return 'alpha'; } },
+    set(t) { try { localStorage.setItem(this.KEY, t); } catch (e) {} },
+  };
+  function applyTier() { document.body.classList.toggle('tier-alpha', Tier.get() === 'alpha'); }
+  function wireBetaGate() {
+    const gate = $('#beta-gate');
+    if (!gate) return;
+    const open = () => { $('#beta-error').hidden = true; $('#beta-pass').value = ''; gate.hidden = false; setTimeout(() => $('#beta-pass').focus(), 50); };
+    const tryUnlock = () => {
+      if ($('#beta-pass').value.trim() === 'ag') { Tier.set('beta'); location.href = 'index.html'; }
+      else { $('#beta-error').hidden = false; }
+    };
+    $('#beta-btn')?.addEventListener('click', open);
+    $('#beta-cancel')?.addEventListener('click', () => { gate.hidden = true; });
+    $('#beta-go')?.addEventListener('click', tryUnlock);
+    $('#beta-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+  }
+
   function renderAuthState() {
     const el = $('#auth-state');
-    const auth = Store.getAuth();
-    if (auth) {
-      el.textContent = auth.email;
+    const u = Store.getActiveUser();
+    if (u) {
+      el.textContent = u.name;
       el.classList.add('signed-in');
     } else {
-      el.textContent = 'Sign in';
+      el.textContent = 'Pick user';
       el.classList.remove('signed-in');
     }
   }
@@ -598,6 +698,8 @@ const UI = (() => {
   }
 
   function init() {
+    applyTier();
+    wireBetaGate();
     renderAuthState();
     initChecklist();
     initExpandable();
