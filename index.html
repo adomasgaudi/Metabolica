@@ -3,12 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.1.1 — weight tracker</title>
+<title>Metabolica v0.1.3 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- date adapter: lets the chart's x-axis use a real time scale so gaps between entries render to scale -->
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<!-- hammerjs powers pinch-to-zoom on touch; zoom plugin adds wheel/drag/pinch zoom + pan to the chart -->
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <style>
   /* ============================================================
      Shared styles — keep in sync with guide.html if not extracted
@@ -92,30 +95,65 @@
   .stat-card .unit {
     font-size: 11px; color: #888; font-weight: 500; margin-left: 2px;
   }
+  /* Chart view fills the screen: flex column so the chart grows to take all
+     space left after the heading, stat cards, and settings panel — no page
+     scroll on a phone (100dvh tracks the visible viewport as browser chrome
+     hides/shows). */
+  #view-chart.active {
+    display: flex; flex-direction: column;
+    min-height: calc(100dvh - 70px - 96px);
+    padding-bottom: 0;
+  }
+  #view-chart .stat-cards { margin-bottom: 12px; }
   .chart-container {
-    position: relative; height: 280px; margin-bottom: 16px;
-    overflow-x: auto; overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
+    position: relative; flex: 1 1 auto; min-height: 220px;
+    margin-bottom: 8px; overflow: hidden;
   }
-  .chart-scroll { position: relative; height: 100%; min-width: 100%; }
-  .avg-control {
+  .chart-scroll { position: relative; width: 100%; height: 100%; }
+
+  /* SETTINGS PANEL (above the chart, collapsed by default to maximize chart) */
+  .chart-settings {
+    border: 1px solid #eee; border-radius: 10px; background: #fafafa;
+    margin-bottom: 12px; overflow: hidden; flex: none;
+  }
+  .settings-toggle {
+    width: 100%; display: flex; align-items: center; gap: 8px;
+    padding: 11px 14px; background: none; border: none; cursor: pointer;
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #888; font-weight: 600;
+  }
+  .settings-toggle svg { width: 15px; height: 15px; stroke-width: 1.8; }
+  .settings-toggle .chevron {
+    margin-left: auto; transition: transform 0.2s; font-size: 10px; color: #aaa;
+  }
+  .chart-settings.open .settings-toggle .chevron { transform: rotate(180deg); }
+  .settings-body { display: none; padding: 0 14px 14px; }
+  .chart-settings.open .settings-body { display: block; }
+  .setting-row {
     display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px; margin-bottom: 18px;
-    background: #fafafa; border: 1px solid #eee; border-radius: 10px;
+    padding-top: 10px; border-top: 1px solid #eee;
   }
-  .avg-control .avg-label {
+  .setting-row + .setting-row { margin-top: 2px; }
+  .setting-label {
     font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
     color: #888; font-weight: 500; white-space: nowrap;
   }
-  .avg-control .avg-label .avg-days { color: #0891b2; font-weight: 700; }
-  .avg-control input[type="range"] {
+  .setting-label .avg-days { color: #0891b2; font-weight: 700; }
+  .setting-row input[type="range"] {
     flex: 1; min-width: 0; accent-color: #0891b2; height: 22px;
   }
-  .avg-control input[type="number"] {
+  .setting-row input[type="number"] {
     width: 58px; padding: 6px 8px; font-size: 13px; font-weight: 600;
     color: #111; border: 1px solid #ddd; border-radius: 8px; text-align: center;
     -moz-appearance: textfield;
   }
+  .zoom-row .zoom-hint { flex: 1; font-size: 11.5px; color: #aaa; text-transform: none; letter-spacing: 0; }
+  .reset-zoom-btn {
+    padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+    color: #0891b2; background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    white-space: nowrap;
+  }
+  .reset-zoom-btn:hover { background: #f0fdfa; border-color: #99f6e4; }
 
   /* LOGS */
   .log-list {
@@ -474,7 +512,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.1</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.3</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
     <button id="admin-btn" class="icon-btn admin-only" aria-label="Admin — manage users">
@@ -509,10 +547,24 @@
         <div><span id="stat-days" class="value">—</span></div>
       </div>
     </div>
-    <div class="avg-control" id="avg-control">
-      <span class="avg-label">Avg over <span class="avg-days" id="avg-days">15</span> days</span>
-      <input type="range" id="avg-range" min="1" max="100" value="15" aria-label="Moving average window in days">
-      <input type="number" id="avg-number" min="1" max="100" value="15" aria-label="Moving average window in days">
+    <div class="chart-settings" id="chart-settings">
+      <button class="settings-toggle" id="settings-toggle" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+        <span class="chevron">▾</span>
+      </button>
+      <div class="settings-body" id="settings-body">
+        <div class="setting-row">
+          <span class="setting-label">Avg over <span class="avg-days" id="avg-days">15</span> days</span>
+          <input type="range" id="avg-range" min="1" max="100" value="15" aria-label="Moving average window in days">
+          <input type="number" id="avg-number" min="1" max="100" value="15" aria-label="Moving average window in days">
+        </div>
+        <div class="setting-row zoom-row">
+          <span class="setting-label">Zoom</span>
+          <span class="zoom-hint">Pinch, scroll, or drag a box on the chart</span>
+          <button class="reset-zoom-btn" id="reset-zoom" type="button">Reset</button>
+        </div>
+      </div>
     </div>
     <div class="chart-container">
       <div class="chart-scroll">
@@ -1216,18 +1268,18 @@ const UI = (() => {
     const container = $('.chart-container');
     const cards = $('.stat-cards');
 
-    const avgControl = $('#avg-control');
+    const settings = $('#chart-settings');
     if (sorted.length === 0) {
       empty.style.display = 'block';
       container.style.display = 'none';
       cards.style.display = 'none';
-      avgControl.style.display = 'none';
+      settings.style.display = 'none';
       return;
     }
     empty.style.display = 'none';
     container.style.display = 'block';
     cards.style.display = 'grid';
-    avgControl.style.display = 'flex';
+    settings.style.display = 'block';
 
     const current = sorted[sorted.length - 1].weight;
     const first = sorted[0].weight;
@@ -1241,11 +1293,6 @@ const UI = (() => {
     if (change > 0) changeEl.classList.add('up');
     if (change < 0) changeEl.classList.add('down');
     $('#stat-days').textContent = sorted.length;
-
-    // Widen the scroll area so dense logs stay legible — ~46px per entry,
-    // never narrower than the visible container (so few entries still fill it).
-    const scroll = container.querySelector('.chart-scroll');
-    scroll.style.width = Math.max(container.clientWidth, sorted.length * 46) + 'px';
 
     const ctx = $('#weightChart');
     if (chart) chart.destroy();
@@ -1282,6 +1329,22 @@ const UI = (() => {
             callbacks: {
               title: items => Fmt.date(items[0].parsed.x),
               label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(1)} kg`,
+            },
+          },
+          // Zoom into any date range (x) and weight range (y): pinch on touch,
+          // wheel on desktop, or drag a box. Pan once zoomed. Limits keep the
+          // view from drifting past the actual data.
+          zoom: {
+            zoom: {
+              wheel: { enabled: true },
+              pinch: { enabled: true },
+              drag: { enabled: true, backgroundColor: 'rgba(8,145,178,0.12)', borderColor: '#0891b2', borderWidth: 1 },
+              mode: 'xy',
+            },
+            pan: { enabled: true, mode: 'xy' },
+            limits: {
+              x: { min: 'original', max: 'original' },
+              y: { min: 'original', max: 'original' },
             },
           },
         },
@@ -1651,6 +1714,15 @@ const UI = (() => {
     $('#avg-range').addEventListener('input', e => setAvg(e.target.value));
     $('#avg-number').addEventListener('input', e => setAvg(e.target.value, false));
     $('#avg-number').addEventListener('change', e => setAvg(e.target.value));
+
+    // Settings panel collapse/expand (collapsed by default to maximize chart)
+    $('#settings-toggle').addEventListener('click', () => {
+      const panel = $('#chart-settings');
+      const open = panel.classList.toggle('open');
+      $('#settings-toggle').setAttribute('aria-expanded', open);
+    });
+    // Reset zoom/pan back to the full data range
+    $('#reset-zoom').addEventListener('click', () => { if (chart) chart.resetZoom(); });
 
     // Add button
     $('#add-btn').addEventListener('click', () => {
