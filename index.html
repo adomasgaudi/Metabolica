@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.1.5 — weight tracker</title>
+<title>Metabolica v0.1.6 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -99,11 +99,10 @@
      browsers, so the chart-container's height is measured and set in JS
      (sizeChart) to exactly fill from its top down to the bottom nav. These
      rules are just the fallback before JS runs / if it's disabled. */
-  #view-chart.active { padding-bottom: 0; }
-  #view-chart .stat-cards { margin-bottom: 12px; }
+  #view-chart.active { padding: 10px 14px 0; }
   .chart-container {
-    position: relative; height: 60vh; min-height: 300px;
-    margin-bottom: 8px; overflow: hidden;
+    position: relative; height: 72vh; min-height: 320px;
+    margin-bottom: 6px; overflow: hidden;
   }
   .chart-scroll { position: relative; width: 100%; height: 100%; }
 
@@ -508,7 +507,7 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.5</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.1.6</span></div>
   <div class="topbar-right">
     <span id="auth-state" class="auth-state">Sign in</span>
     <button id="admin-btn" class="icon-btn admin-only" aria-label="Admin — manage users">
@@ -528,21 +527,6 @@
 <main class="content">
 
   <section id="view-chart" class="view active">
-    <h2>Your weight</h2>
-    <div class="stat-cards">
-      <div class="stat-card">
-        <div class="label">Current</div>
-        <div><span id="stat-current" class="value">—</span><span class="unit">kg</span></div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Change</div>
-        <div><span id="stat-change" class="value">—</span><span class="unit">kg</span></div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Entries</div>
-        <div><span id="stat-days" class="value">—</span></div>
-      </div>
-    </div>
     <div class="chart-settings" id="chart-settings">
       <button class="settings-toggle" id="settings-toggle" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1276,34 +1260,18 @@ const UI = (() => {
     const sorted = [...log].sort((a, b) => new Date(a.date) - new Date(b.date));
     const empty = $('#chart-empty');
     const container = $('.chart-container');
-    const cards = $('.stat-cards');
 
     const settings = $('#chart-settings');
     if (sorted.length === 0) {
       empty.style.display = 'block';
       container.style.display = 'none';
-      cards.style.display = 'none';
       settings.style.display = 'none';
       return;
     }
     empty.style.display = 'none';
     container.style.display = 'block';
-    cards.style.display = 'grid';
     settings.style.display = 'block';
     sizeChart();  // give the container a real height before Chart.js reads it
-
-    const current = sorted[sorted.length - 1].weight;
-    const first = sorted[0].weight;
-    const change = current - first;
-    const changeStr = (change >= 0 ? '+' : '') + change.toFixed(1);
-
-    $('#stat-current').textContent = current.toFixed(1);
-    const changeEl = $('#stat-change');
-    changeEl.textContent = changeStr;
-    changeEl.classList.remove('up', 'down');
-    if (change > 0) changeEl.classList.add('up');
-    if (change < 0) changeEl.classList.add('down');
-    $('#stat-days').textContent = sorted.length;
 
     const ctx = $('#weightChart');
     if (chart) chart.destroy();
