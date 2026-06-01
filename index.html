@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.2.7 — weight tracker</title>
+<title>Metabolica v0.3 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
 <!-- Tier gate: the full tracker is the "alpha" (testing) tier. Anyone without
      alpha access (the default "beta" tier) is bounced to the guide before load. -->
@@ -589,6 +589,8 @@
     margin-top: 12px; font-size: 11.5px; color: #555; line-height: 1.5;
   }
 </style>
+<link rel="stylesheet" href="shell.css">
+<script src="shell.js"></script>
 </head>
 <body>
 
@@ -597,11 +599,8 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.7</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.3</span></div>
   <div class="topbar-right">
-    <span id="tier-badge" class="tier-badge tier-badge-beta">BETA</span>
-    <button id="beta-btn" class="beta-btn restricted-only" type="button">Alpha</button>
-    <button id="exit-beta-btn" class="tier-exit full-only" type="button">Exit alpha</button>
     <span id="auth-state" class="auth-state full-only">Sign in</span>
     <button id="admin-btn" class="icon-btn admin-only full-only" aria-label="Admin — manage users">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -695,49 +694,8 @@
 </main>
 
 
-<!-- ═══════════════════════════════════════════════ -->
-<!-- BOTTOM NAV -->
-<!-- ═══════════════════════════════════════════════ -->
-
-<nav class="bottom-nav">
-  <button class="nav-btn active nav-locked" data-view="chart">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
-    <span>Chart</span>
-    <span class="soon-tag">soon</span>
-  </button>
-  <button class="nav-btn nav-locked" data-view="logs">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
-    <span>Logs</span>
-    <span class="soon-tag">soon</span>
-  </button>
-  <div class="add-btn-wrap full-only">
-    <button class="add-btn" id="add-btn" aria-label="Add weight">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </button>
-  </div>
-  <button class="nav-btn nav-locked" data-view="diet">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-    <span>Diet</span>
-  </button>
-  <a class="nav-btn" href="guide.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v15a2 2 0 0 0 2 2h13"/><path d="M4 4h13a2 2 0 0 1 2 2v13H6a2 2 0 0 0-2 2"/></svg>
-    <span>Guide</span>
-  </a>
-</nav>
-
-<!-- Beta password gate -->
-<div class="beta-gate" id="beta-gate" hidden>
-  <div class="beta-gate-card">
-    <h3>Enter alpha</h3>
-    <p>The full tracker is in private alpha. Enter the password to continue.</p>
-    <input type="password" id="beta-pass" placeholder="Password" autocomplete="off">
-    <p class="beta-error" id="beta-error" hidden>Wrong password.</p>
-    <div class="beta-gate-actions">
-      <button class="beta-cancel" id="beta-cancel" type="button">Cancel</button>
-      <button class="beta-go" id="beta-go" type="button">Unlock</button>
-    </div>
-  </div>
-</div>
+<!-- Bottom nav + beta gate rendered by shell.js (single source for all pages) -->
+<nav class="bottom-nav" data-page="app"></nav>
 
 
 <!-- ═══════════════════════════════════════════════ -->
@@ -1313,34 +1271,8 @@ const UI = (() => {
   const $$ = sel => document.querySelectorAll(sel);
   let chart = null;
   let viewerChart = null;
-
-  // ── Tiers: 'beta' (guide only, default) vs 'alpha' (full tracker w/ testing
-  //    features). 'alpha' is the unlocked/testing tier; 'beta' is the default. ──
-  const Tier = {
-    KEY: 'metabolica_tier',
-    get() { try { return localStorage.getItem(this.KEY) === 'alpha' ? 'alpha' : 'beta'; } catch (e) { return 'beta'; } },
-    set(t) { try { localStorage.setItem(this.KEY, t); } catch (e) {} },
-  };
-  function applyTier() {
-    const t = Tier.get();
-    document.body.classList.toggle('tier-restricted', t !== 'alpha');  // restricted unless full alpha
-    const badge = $('#tier-badge');
-    if (badge) { badge.textContent = t.toUpperCase(); badge.className = 'tier-badge tier-badge-' + t; }
-  }
-  function wireBetaGate() {
-    const gate = $('#beta-gate');
-    $('#exit-beta-btn')?.addEventListener('click', () => { Tier.set('beta'); location.href = 'guide.html'; });
-    if (!gate) return;
-    const open = () => { $('#beta-error').hidden = true; $('#beta-pass').value = ''; gate.hidden = false; setTimeout(() => $('#beta-pass').focus(), 50); };
-    const tryUnlock = () => {
-      if ($('#beta-pass').value.trim() === 'ag') { Tier.set('alpha'); location.href = 'index.html'; }
-      else { $('#beta-error').hidden = false; }
-    };
-    $('#beta-btn')?.addEventListener('click', open);
-    $('#beta-cancel')?.addEventListener('click', () => { gate.hidden = true; });
-    $('#beta-go')?.addEventListener('click', tryUnlock);
-    $('#beta-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
-  }
+  // Tier state, top-bar controls, bottom nav, and the beta gate are owned by
+  // shell.js (shared across all pages) — nothing tier-related lives here.
   let avgWindow = 15;  // trailing moving-average window, in days (1–100)
 
   // Trailing N-day moving average. For each entry, averages every entry whose
@@ -1839,8 +1771,6 @@ const UI = (() => {
   }
 
   function init() {
-    applyTier();
-    wireBetaGate();
     Seed.run();  // populate Adomas's log from the bundled Libra export (once)
     // Bottom-nav buttons (data-view only — Guide is a separate <a> link)
     $$('.nav-btn[data-view]').forEach(btn => {

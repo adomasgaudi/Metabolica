@@ -1,0 +1,122 @@
+/* ============================================================
+   shell.css — shared shell styles for every Metabolica page.
+   Single source of truth for the bottom nav, tier states, and the
+   beta gate, so they can't drift between index/guide/methodology.
+   ============================================================ */
+
+/* ── TIER VISIBILITY ───────────────────────────────────────
+   beta  = default/restricted (guide only); body has .tier-restricted.
+   alpha = full tracker (testing); body has no .tier-restricted. */
+.restricted-only { display: none; }
+body.tier-restricted .restricted-only { display: inline-flex; }
+body.tier-restricted .full-only { display: none !important; }
+
+.beta-btn {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  color: #0891b2; background: #ecfeff; border: 1px solid #a5f3fc;
+  padding: 6px 14px; border-radius: 8px; cursor: pointer;
+}
+.beta-btn:hover { background: #cffafe; }
+.tier-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 3px 8px; border-radius: 6px; text-transform: uppercase;
+}
+.tier-badge-alpha { background: #fef3c7; color: #b45309; }
+.tier-badge-beta { background: #cffafe; color: #0e7490; }
+.tier-exit {
+  font-size: 12px; font-weight: 600; color: #64748b;
+  background: #f1f5f9; border: 1px solid #e2e8f0;
+  padding: 6px 12px; border-radius: 8px; cursor: pointer;
+}
+.tier-exit:hover { background: #e2e8f0; }
+
+/* Locked nav items: grayed + "soon" badge, only while restricted. */
+body.tier-restricted .nav-locked {
+  color: #cbd5e1 !important; pointer-events: none; cursor: default;
+}
+body.tier-restricted .nav-locked span:not(.soon-tag) { display: none; }
+.soon-tag { display: none; }
+body.tier-restricted .nav-locked .soon-tag {
+  display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #fff; background: #cbd5e1;
+  border-radius: 6px; padding: 2px 6px;
+}
+
+/* Methodology sub-tab: hidden under alpha (full); shown as locked "soon"
+   under beta (restricted). */
+.sub-tab-method { display: none; }
+body.tier-restricted .sub-tab-method {
+  display: inline-flex; align-items: center; gap: 6px;
+  pointer-events: none; color: #cbd5e1; border-bottom-color: transparent;
+}
+body.tier-restricted .sub-tab-method::after {
+  content: "soon"; font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: #fff; background: #cbd5e1;
+  border-radius: 6px; padding: 2px 6px;
+}
+
+/* ── BOTTOM NAV ────────────────────────────────────────────
+   Rendered by shell.js into <nav class="bottom-nav" data-page="…">. */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  max-width: 480px; margin: 0 auto; background: #fff;
+  border-top: 1px solid #eee; padding: 6px 14px 10px;
+  display: grid; grid-template-columns: 1fr 1fr 84px 1fr 1fr;
+  gap: 4px; align-items: center; z-index: 100;
+}
+.nav-btn {
+  background: none; border: none; cursor: pointer; text-decoration: none;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px;
+  padding: 8px 0 4px; color: #999; font-size: 10.5px; font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-btn svg { width: 22px; height: 22px; stroke-width: 1.7; }
+.nav-btn.active { color: #0d9488; }
+.nav-btn:hover { color: #555; }
+.nav-btn.active:hover { color: #0d9488; }
+.add-btn-wrap { display: flex; justify-content: center; }
+.add-btn {
+  background: linear-gradient(135deg, #059669 0%, #0891b2 55%, #0284c7 100%);
+  color: #fff; border: none; text-decoration: none;
+  width: 60px; height: 60px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: -30px; box-shadow: 0 6px 18px rgba(8, 145, 178, 0.35);
+  transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.add-btn:hover {
+  filter: brightness(0.93); transform: scale(1.05);
+  box-shadow: 0 8px 22px rgba(8, 145, 178, 0.45);
+}
+.add-btn:active { transform: scale(0.98); }
+.add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.6; }
+
+/* ── BETA GATE (password modal, injected by shell.js) ──────── */
+.beta-gate {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(17,17,17,0.5); display: flex;
+  align-items: center; justify-content: center; padding: 24px;
+}
+.beta-gate[hidden] { display: none; }
+.beta-gate-card {
+  background: #fff; border-radius: 16px; padding: 24px 22px;
+  width: 100%; max-width: 320px; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+}
+.beta-gate-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.beta-gate-card p { font-size: 13.5px; color: #666; margin-bottom: 14px; }
+.beta-gate-card input {
+  width: 100%; padding: 11px 12px; font-size: 15px;
+  border: 1px solid #ddd; border-radius: 10px; margin-bottom: 6px;
+}
+.beta-gate-card input:focus { outline: none; border-color: #0891b2; }
+.beta-error { color: #dc2626 !important; font-size: 12.5px !important; margin: 2px 0 8px !important; }
+.beta-gate-actions { display: flex; gap: 10px; margin-top: 8px; }
+.beta-gate-actions button {
+  flex: 1; padding: 11px; font-size: 14px; font-weight: 600;
+  border-radius: 10px; cursor: pointer;
+}
+.beta-cancel { background: #f4f4f4; border: 1px solid #e5e5e5; color: #444; }
+.beta-go {
+  background: linear-gradient(135deg, #059669 0%, #0891b2 55%, #0284c7 100%);
+  border: none; color: #fff;
+}

@@ -287,26 +287,25 @@
   .add-btn:active { transform: scale(0.98); }
   .add-btn svg { width: 28px; height: 28px; stroke: #fff; stroke-width: 2.6; }
 </style>
+<link rel="stylesheet" href="shell.css">
+<script src="shell.js"></script>
 </head>
 <body>
 
 <!-- ═══════════════════════════════════════════════ -->
-<!-- TOP BAR -->
+<!-- TOP BAR  (tier badge + Unlock/Exit injected by shell.js) -->
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.7</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.3</span></div>
   <div class="topbar-right">
-    <span id="tier-badge" class="tier-badge tier-badge-beta">BETA</span>
-    <button id="beta-btn" class="beta-btn restricted-only" type="button">Alpha</button>
-    <button id="exit-beta-btn" class="tier-exit full-only" type="button">Exit alpha</button>
     <span id="auth-state" class="auth-state full-only">Sign in</span>
   </div>
 </header>
 
 <div class="sub-tabs">
   <a class="sub-tab active" href="guide.html">Checklist & guide</a>
-  <a class="sub-tab" href="methodology.html">Methodology</a>
+  <a class="sub-tab sub-tab-method" href="methodology.html">Methodology</a>
 </div>
 
 
@@ -480,7 +479,7 @@
       </div>
 
       <div class="cat">
-        <button class="cat-head" type="button"><span class="cat-title">Financial help</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
+        <button class="cat-head" type="button"><span class="cat-title">Savings</span><span class="cat-soon">soon</span><span class="cat-chev">▾</span></button>
         <div class="cat-body">
           <p class="cat-stub">Detailed notes coming soon.</p>
         </div>
@@ -546,50 +545,8 @@
 </main>
 
 
-<!-- ═══════════════════════════════════════════════ -->
-<!-- BOTTOM NAV — Chart/Logs/+ link back to tracker -->
-<!-- ═══════════════════════════════════════════════ -->
-
-<nav class="bottom-nav">
-  <a class="nav-btn nav-locked" href="index.html">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
-    <span>Chart</span>
-    <span class="soon-tag">soon</span>
-  </a>
-  <a class="nav-btn nav-locked" href="index.html#logs">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
-    <span>Logs</span>
-    <span class="soon-tag">soon</span>
-  </a>
-  <div class="add-btn-wrap full-only">
-    <a class="add-btn" href="index.html#add" aria-label="Add weight">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </a>
-  </div>
-  <a class="nav-btn nav-locked" href="index.html#diet">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-    <span>Diet</span>
-    <span class="soon-tag">soon</span>
-  </a>
-  <button class="nav-btn active">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4v15a2 2 0 0 0 2 2h13"/><path d="M4 4h13a2 2 0 0 1 2 2v13H6a2 2 0 0 0-2 2"/></svg>
-    <span>Guide</span>
-  </button>
-</nav>
-
-<!-- Beta password gate -->
-<div class="beta-gate" id="beta-gate" hidden>
-  <div class="beta-gate-card">
-    <h3>Enter alpha</h3>
-    <p>The full tracker is in private alpha. Enter the password to continue.</p>
-    <input type="password" id="beta-pass" placeholder="Password" autocomplete="off">
-    <p class="beta-error" id="beta-error" hidden>Wrong password.</p>
-    <div class="beta-gate-actions">
-      <button class="beta-cancel" id="beta-cancel" type="button">Cancel</button>
-      <button class="beta-go" id="beta-go" type="button">Unlock</button>
-    </div>
-  </div>
-</div>
+<!-- Bottom nav + beta gate are rendered by shell.js (single source). -->
+<nav class="bottom-nav" data-page="guide"></nav>
 
 
 <!-- ═══════════════════════════════════════════════ -->
@@ -654,34 +611,8 @@ const Store = (() => {
 const UI = (() => {
   const $ = sel => document.querySelector(sel);
   const $$ = sel => document.querySelectorAll(sel);
-
-  // ── Tiers: 'beta' (this guide is the default/restricted home) vs 'alpha'
-  //    (full tracker w/ testing features). 'alpha' is unlocked; 'beta' default. ──
-  const Tier = {
-    KEY: 'metabolica_tier',
-    get() { try { return localStorage.getItem(this.KEY) === 'alpha' ? 'alpha' : 'beta'; } catch (e) { return 'beta'; } },
-    set(t) { try { localStorage.setItem(this.KEY, t); } catch (e) {} },
-  };
-  function applyTier() {
-    const t = Tier.get();
-    document.body.classList.toggle('tier-restricted', t !== 'alpha');
-    const badge = $('#tier-badge');
-    if (badge) { badge.textContent = t.toUpperCase(); badge.className = 'tier-badge tier-badge-' + t; }
-  }
-  function wireBetaGate() {
-    const gate = $('#beta-gate');
-    $('#exit-beta-btn')?.addEventListener('click', () => { Tier.set('beta'); location.href = 'guide.html'; });
-    if (!gate) return;
-    const open = () => { $('#beta-error').hidden = true; $('#beta-pass').value = ''; gate.hidden = false; setTimeout(() => $('#beta-pass').focus(), 50); };
-    const tryUnlock = () => {
-      if ($('#beta-pass').value.trim() === 'ag') { Tier.set('alpha'); location.href = 'index.html'; }
-      else { $('#beta-error').hidden = false; }
-    };
-    $('#beta-btn')?.addEventListener('click', open);
-    $('#beta-cancel')?.addEventListener('click', () => { gate.hidden = true; });
-    $('#beta-go')?.addEventListener('click', tryUnlock);
-    $('#beta-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
-  }
+  // Tier state, top-bar controls, bottom nav, and the beta gate are owned by
+  // shell.js now (shared across pages) — nothing tier-related lives here.
 
   function renderAuthState() {
     const el = $('#auth-state');
@@ -740,8 +671,6 @@ const UI = (() => {
   }
 
   function init() {
-    applyTier();
-    wireBetaGate();
     renderAuthState();
     initChecklist();
     initExpandable();
