@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Metabolica v0.2.1 — weight tracker</title>
+<title>Metabolica v0.2.2 — weight tracker</title>
 <meta name="description" content="Daily weight tracker, paired with the PSMF guide.">
-<!-- Tier gate: the full tracker is the "beta" tier. Anyone without beta access
-     (the default "alpha" tier) is bounced to the guide before the app loads. -->
+<!-- Tier gate: the full tracker is the "alpha" (testing) tier. Anyone without
+     alpha access (the default "beta" tier) is bounced to the guide before load. -->
 <script>
-  try { if ((localStorage.getItem('metabolica_tier') || 'alpha') !== 'beta') location.replace('guide.html'); } catch (e) {}
+  try { if ((localStorage.getItem('metabolica_tier') || 'beta') !== 'alpha') location.replace('guide.html'); } catch (e) {}
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -72,10 +72,10 @@
 
   /* ── TIERS ──────────────────────────────────────────
      alpha (default): guide only — everything else locked + "soon".
-     beta: the full tracker. body.tier-alpha toggles the locked look. */
-  .alpha-only { display: none; }
-  body.tier-alpha .alpha-only { display: inline-flex; }
-  body.tier-alpha .beta-only { display: none !important; }
+     beta: the full tracker. body.tier-restricted toggles the locked look. */
+  .restricted-only { display: none; }
+  body.tier-restricted .restricted-only { display: inline-flex; }
+  body.tier-restricted .full-only { display: none !important; }
   .beta-btn {
     font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
     color: #0891b2; background: #ecfeff; border: 1px solid #a5f3fc;
@@ -94,12 +94,12 @@
     padding: 6px 12px; border-radius: 8px; cursor: pointer;
   }
   .tier-exit:hover { background: #e2e8f0; }
-  body.tier-alpha .nav-locked {
+  body.tier-restricted .nav-locked {
     color: #cbd5e1 !important; pointer-events: none; cursor: default;
   }
-  body.tier-alpha .nav-locked span:not(.soon-tag) { display: none; }
+  body.tier-restricted .nav-locked span:not(.soon-tag) { display: none; }
   .soon-tag { display: none; }
-  body.tier-alpha .nav-locked .soon-tag {
+  body.tier-restricted .nav-locked .soon-tag {
     display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
     text-transform: uppercase; color: #fff; background: #cbd5e1;
     border-radius: 6px; padding: 2px 6px;
@@ -589,13 +589,13 @@
 <!-- ═══════════════════════════════════════════════ -->
 
 <header class="topbar">
-  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.1</span></div>
+  <div class="brand"><span class="accent">●</span> Metabolica <span class="version">v0.2.2</span></div>
   <div class="topbar-right">
-    <span id="tier-badge" class="tier-badge tier-badge-alpha">ALPHA</span>
-    <button id="beta-btn" class="beta-btn alpha-only" type="button">Beta</button>
-    <button id="exit-beta-btn" class="tier-exit beta-only" type="button">Exit beta</button>
-    <span id="auth-state" class="auth-state beta-only">Sign in</span>
-    <button id="admin-btn" class="icon-btn admin-only beta-only" aria-label="Admin — manage users">
+    <span id="tier-badge" class="tier-badge tier-badge-beta">BETA</span>
+    <button id="beta-btn" class="beta-btn restricted-only" type="button">Alpha</button>
+    <button id="exit-beta-btn" class="tier-exit full-only" type="button">Exit alpha</button>
+    <span id="auth-state" class="auth-state full-only">Sign in</span>
+    <button id="admin-btn" class="icon-btn admin-only full-only" aria-label="Admin — manage users">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     </button>
     <button id="profile-btn" class="icon-btn" aria-label="Profile">
@@ -701,7 +701,7 @@
     <span>Logs</span>
     <span class="soon-tag">soon</span>
   </button>
-  <div class="add-btn-wrap beta-only">
+  <div class="add-btn-wrap full-only">
     <button class="add-btn" id="add-btn" aria-label="Add weight">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
@@ -719,8 +719,8 @@
 <!-- Beta password gate -->
 <div class="beta-gate" id="beta-gate" hidden>
   <div class="beta-gate-card">
-    <h3>Enter beta</h3>
-    <p>The full tracker is in private beta. Enter the password to continue.</p>
+    <h3>Enter alpha</h3>
+    <p>The full tracker is in private alpha. Enter the password to continue.</p>
     <input type="password" id="beta-pass" placeholder="Password" autocomplete="off">
     <p class="beta-error" id="beta-error" hidden>Wrong password.</p>
     <div class="beta-gate-actions">
@@ -1305,25 +1305,26 @@ const UI = (() => {
   let chart = null;
   let viewerChart = null;
 
-  // ── Tiers: 'alpha' (guide only, default) vs 'beta' (full tracker). ──
+  // ── Tiers: 'beta' (guide only, default) vs 'alpha' (full tracker w/ testing
+  //    features). 'alpha' is the unlocked/testing tier; 'beta' is the default. ──
   const Tier = {
     KEY: 'metabolica_tier',
-    get() { try { return localStorage.getItem(this.KEY) === 'beta' ? 'beta' : 'alpha'; } catch (e) { return 'alpha'; } },
+    get() { try { return localStorage.getItem(this.KEY) === 'alpha' ? 'alpha' : 'beta'; } catch (e) { return 'beta'; } },
     set(t) { try { localStorage.setItem(this.KEY, t); } catch (e) {} },
   };
   function applyTier() {
     const t = Tier.get();
-    document.body.classList.toggle('tier-alpha', t === 'alpha');
+    document.body.classList.toggle('tier-restricted', t !== 'alpha');  // restricted unless full alpha
     const badge = $('#tier-badge');
     if (badge) { badge.textContent = t.toUpperCase(); badge.className = 'tier-badge tier-badge-' + t; }
   }
   function wireBetaGate() {
     const gate = $('#beta-gate');
-    $('#exit-beta-btn')?.addEventListener('click', () => { Tier.set('alpha'); location.href = 'guide.html'; });
+    $('#exit-beta-btn')?.addEventListener('click', () => { Tier.set('beta'); location.href = 'guide.html'; });
     if (!gate) return;
     const open = () => { $('#beta-error').hidden = true; $('#beta-pass').value = ''; gate.hidden = false; setTimeout(() => $('#beta-pass').focus(), 50); };
     const tryUnlock = () => {
-      if ($('#beta-pass').value.trim() === 'ag') { Tier.set('beta'); location.href = 'index.html'; }
+      if ($('#beta-pass').value.trim() === 'ag') { Tier.set('alpha'); location.href = 'index.html'; }
       else { $('#beta-error').hidden = false; }
     };
     $('#beta-btn')?.addEventListener('click', open);
