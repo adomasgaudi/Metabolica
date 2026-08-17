@@ -42,9 +42,9 @@ body.tier-restricted .nav-locked .soon-tag {
   border-radius: 6px; padding: 2px 6px;
 }
 
-/* Methodology sub-tab: hidden under alpha (full); shown as locked "soon"
-   under beta (restricted). */
-.sub-tab-method { display: none; }
+/* Methodology sub-tab: normal in the full tier; locked "soon" in the
+   restricted tier. Driven purely by the body tier class — no per-tier
+   hardcoding, so it follows whatever tier the account resolves to. */
 body.tier-restricted .sub-tab-method {
   display: inline-flex; align-items: center; gap: 6px;
   pointer-events: none; color: #cbd5e1; border-bottom-color: transparent;

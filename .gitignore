@@ -1,0 +1,10 @@
+# Local / transient
+.claude/
+*.lock
+node_modules/
+
+# Parallel-AI workflow scratch — kept out of the tracker repo
+AI-SYNC.md
+chat-server.js
+messages.json
+terminal.html
